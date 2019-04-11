@@ -1,2 +1,1 @@
-# haskfey
 # Haskell Fey
