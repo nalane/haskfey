@@ -5,7 +5,9 @@ the persistent state of the engine
 {-# LANGUAGE TemplateHaskell #-}
 
 module State (
-    State(..), logPath, logFile, newState, window, width, height,
+    State(..), 
+    FeyState(..), fmap, pure, (<*>), (>>), (>>=), return,
+    logPath, logFile, newState, window, width, height,
     recordLog, endLogging,
     loadShader, unloadShader
 ) where
@@ -39,6 +41,32 @@ data State = State {
 
 makeLenses ''State
 
+newtype FeyState a = FeyState (State -> IO (State, a))
+
+instance Functor FeyState where
+    fmap f (FeyState s) = FeyState (\state -> do
+        (newState, val) <- s state
+        return (newState, f val))
+
+instance Applicative FeyState where
+    pure val = FeyState (\state -> return (state, val))
+    (<*>) (FeyState lhs) (FeyState rhs) = FeyState (\state -> do
+        (newState, f) <- lhs state
+        (finalState, val) <- rhs newState
+        return (finalState, f val))
+
+instance Monad FeyState where
+    (>>) (FeyState lhs) (FeyState rhs) = FeyState (\state -> do
+        (newState, _) <- lhs state
+        rhs newState)
+
+    (>>=) (FeyState lhs) f = FeyState (\state -> do
+        (newState, val) <- lhs state
+        let (FeyState rhs) = f val
+        rhs newState)
+
+    return val = FeyState (\state -> return (state, val))
+
 -- |Creates a blank state
 newState :: String -> IO State
 newState path = do
@@ -53,6 +81,7 @@ recordLog :: State -> String -> IO ()
 recordLog state msg = do
     let maybeFile = state^.logFile
     forM_ maybeFile $ flip hPutStrLn msg
+
 
 -- |Terminates the logging system
 endLogging :: State -> IO State
