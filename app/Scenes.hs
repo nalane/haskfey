@@ -7,7 +7,7 @@ import Scenes.MainScene
 import Scenes.SecondScene
 import Data.Map
 
-sceneMapping :: String -> State -> IO Scene
+sceneMapping :: String -> FeyState Scene
 sceneMapping = (!) $ fromList [
     ("main", Scenes.MainScene.initScene),
     ("second", Scenes.SecondScene.initScene)]

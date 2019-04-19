@@ -2,7 +2,7 @@
 -}
 
 module Graphics.Shader (
-    createShaderProgram, setShader, ShaderType(..), Program(..)
+    createShaderProgram, ShaderType(..), Program(..)
 ) where
 
 import Graphics.Rendering.OpenGL
@@ -50,7 +50,3 @@ createShaderProgram list = do
     deleteObjectNames shaders
 
     return prog
-
--- |Set the currently active shader program
-setShader :: Program -> IO()
-setShader prog = currentProgram $= Just prog

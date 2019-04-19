@@ -20,44 +20,49 @@ import Data.Foldable
 import Data.Maybe
 
 -- |Initializes the game engine and sets the window width and height
-initGame :: State -> IO State
-initGame state = do
-    let newState = set width (Just 640) $ set height (Just 480) state
-    win <- initGLFW newState
+initGame :: FeyState ()
+initGame = do
+    setStateVar width $ Just 640
+    setStateVar height $ Just 480
+    win <- initGLFW
     initOpenGL
-    return $ set window (Just win) newState
+    setStateVar window (Just win)
 
 -- |The main game loop
-runGame :: State -> (String -> State -> IO Scene) -> String -> IO State
-runGame state sceneMap sceneId = do
-    let win = fromJust (state^.window)
-    sceneMVar <- sceneMap sceneId state >>= newMVar
+runGame :: (String -> FeyState Scene) -> String -> FeyState ()
+runGame sceneMap sceneId = do
+    maybeWin <- getStateVar window
+    let win = fromJust maybeWin
+
+    currScene <- sceneMap sceneId
+    sceneMVar <- execute $ newMVar currScene
 
     iterateUntil id $ do
-        scene <- readMVar sceneMVar
+        scene <- execute $ readMVar sceneMVar
 
-        GLFW.pollEvents
-        updateResult <- (scene^.update) state
+        execute GLFW.pollEvents
+        updateResult <- scene^.update
         case updateResult of
             Nothing -> do
-                GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-                (scene^.draw) state
+                execute $ GL.clear [GL.ColorBuffer, GL.DepthBuffer]
+                scene^.draw
     
-                GLFW.swapBuffers win
+                execute $ GLFW.swapBuffers win
             Just newId -> do
-                newScene <- sceneMap newId state
-                (scene^.endScene) state
-                swapMVar sceneMVar newScene
+                newScene <- sceneMap newId
+                scene^.endScene
+                execute $ swapMVar sceneMVar newScene
                 return ()
 
-        GLFW.windowShouldClose win
+        execute $ GLFW.windowShouldClose win
 
-    readMVar sceneMVar >>= \s -> (s^.endScene) state
-    return state
+    scene <- execute $ readMVar sceneMVar
+    scene^.endScene
 
 -- |Cleans up once the game is finished
-endGame :: State -> IO State
-endGame state = do
-    forM_ (state^.window) GLFW.destroyWindow
-    GLFW.terminate
-    return $ set window Nothing state
+endGame :: FeyState ()
+endGame = do
+    win <- getStateVar window
+    execute $ forM_ win GLFW.destroyWindow
+    execute GLFW.terminate
+    setStateVar window Nothing

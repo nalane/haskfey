@@ -5,9 +5,9 @@ the persistent state of the engine
 {-# LANGUAGE TemplateHaskell #-}
 
 module State (
-    State(..), 
-    FeyState(..), fmap, pure, (<*>), (>>), (>>=), return,
-    logPath, logFile, newState, window, width, height,
+    logPath, logFile, window, width, height,
+    FeyState(..), fmap, pure, (<*>), (>>), (>>=), return, runFeyState,
+    getStateVar, setStateVar, execute,
     recordLog, endLogging,
     loadShader, unloadShader
 ) where
@@ -36,10 +36,12 @@ data State = State {
     _height :: Maybe Int,
 
     --Resources
-    _shaders :: MVar (Map String (Program, Int))
+    _shaders :: Map String (Program, Int)
 }
 
 makeLenses ''State
+
+
 
 newtype FeyState a = FeyState (State -> IO (State, a))
 
@@ -67,67 +69,84 @@ instance Monad FeyState where
 
     return val = FeyState (\state -> return (state, val))
 
--- |Creates a blank state
+getStateVar :: Getting a State a -> FeyState a
+getStateVar getter = FeyState (\state -> return (state, state^.getter))
+
+setStateVar :: ASetter State State a b -> b -> FeyState ()
+setStateVar setter val = FeyState (\state -> return (set setter val state, ()))
+
+execute :: IO a -> FeyState a
+execute action = FeyState (\state -> do
+    val <- action
+    return (state, val))
+
+
+
 newState :: String -> IO State
 newState path = do
-    mShader <- newMVar empty
     fh <- openFile path WriteMode
-    return $ State (Just path) (Just fh) Nothing Nothing Nothing mShader
+    return $ State (Just path) (Just fh) Nothing Nothing Nothing empty
+
+-- |Runs the FeyState and pushes it into the IO monad
+runFeyState :: String -> FeyState a -> IO a
+runFeyState path (FeyState f) = do
+    state <- newState path
+    (_, res) <- f state
+    return res
 
 
 
 -- |Writes to the log
-recordLog :: State -> String -> IO ()
-recordLog state msg = do
-    let maybeFile = state^.logFile
-    forM_ maybeFile $ flip hPutStrLn msg
-
+recordLog :: String -> FeyState ()
+recordLog msg = do
+    maybeFile <- getStateVar logFile
+    execute $ forM_ maybeFile $ flip hPutStrLn msg
 
 -- |Terminates the logging system
-endLogging :: State -> IO State
-endLogging state = do
-    let maybeFile = state^.logFile
-    forM_ maybeFile hClose
-    return $ set logPath Nothing $ set logFile Nothing state
+endLogging :: FeyState ()
+endLogging = do
+    maybeFile <- getStateVar logFile
+    execute $ forM_ maybeFile hClose
+    setStateVar logPath Nothing 
+    setStateVar logFile Nothing
 
 
 
 -- |Returns a shader specified by the files in the given list.
 -- If the shader has already been loaded, the shader is taken from cache
-loadShader :: State -> [(ShaderType, FilePath)] -> IO Program
-loadShader state list = do
+loadShader :: [(ShaderType, FilePath)] -> FeyState Program
+loadShader list = do
     let sortedList = sortBy (\(t1, _) (t2, _) -> compare t1 t2) list
     let key = concatMap snd sortedList
 
-    shadMap <- readMVar (state^.shaders)
+    shadMap <- getStateVar shaders
     let mapVal = M.lookup key shadMap
 
     case mapVal of
         Just (val, count) -> do
-            modifyMVar_ (state^.shaders)
-                (return . adjust (\(prog, count) -> (prog, count + 1)) key)
+            setStateVar shaders $ adjust (\(prog, count) -> (prog, count + 1)) key shadMap
             return val
         Nothing -> do
-            recordLog state ("Loading shader " ++ key)
-            prog <- createShaderProgram sortedList
-            modifyMVar_ (state^.shaders) (return . M.insert key (prog, 1))
+            recordLog ("Loading shader " ++ key)
+            prog <- execute $ createShaderProgram sortedList
+            setStateVar shaders $ M.insert key (prog, 1) shadMap
             return prog
 
 -- |Given a shader, decrements its reference count and deletes it from cache
 -- if its reference count reaches zero.
-unloadShader :: State -> [(ShaderType, FilePath)] -> IO ()
-unloadShader state list = do
+unloadShader :: [(ShaderType, FilePath)] -> FeyState ()
+unloadShader list = do
     let sortedList = sortBy (\(t1, _) (t2, _) -> compare t1 t2) list
     let key = concatMap snd sortedList
 
-    modifyMVar_ (state^.shaders) $ \orig -> do
-        let newMap = adjust (\(item, count) -> (item, count - 1)) key orig
-        let val = M.lookup key newMap
+    shadMap <- getStateVar shaders
 
-        case val of
-            Just (prog, 0) -> do
-                recordLog state ("Unloading shader " ++ key)
-                deleteObjectName prog
-                return $ M.delete key newMap
-            Just (_, _) -> return newMap
-            Nothing -> return newMap
+    let newMap = adjust (\(item, count) -> (item, count - 1)) key shadMap
+    let val = M.lookup key newMap
+
+    case val of
+        Just (prog, 0) -> do
+            recordLog ("Unloading shader " ++ key)
+            execute $ deleteObjectName prog
+            setStateVar shaders $ M.delete key newMap
+        _ -> setStateVar shaders newMap
