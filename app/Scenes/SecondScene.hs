@@ -58,7 +58,15 @@ initScene = do
     setUniformMatrix location $ multiply proj cam
 
     timeVar <- execute $ newMVar 0
-    let ms = SecondScene shaderProg vertexArray vertexBuffer colorBuffer location timeVar cam proj
+    let ms = SecondScene {
+        _prog = shaderProg,
+        _vao = vertexArray,
+        _vbo = vertexBuffer,
+        _cbo = colorBuffer,
+        _ubo = location,
+        _time = timeVar,
+        _cam = cam,
+        _proj = proj }
     return $ Scene (updateSecondScene ms) (drawSecondScene ms) (endSecondScene ms)
 
 updateSecondScene :: SecondScene -> FeyState (Maybe String)
