@@ -6,8 +6,8 @@ the persistent state of the engine
 
 module State (
     logPath, logFile, window, width, height,
-    FeyState(..), fmap, pure, (<*>), (>>), (>>=), return, runFeyState,
-    getStateVar, setStateVar, execute,
+    FeyState(..), fmap, pure, (<*>), (>>), (>>=), return, runFeyState, liftIO,
+    getStateVar, setStateVar,
     recordLog, endLogging,
     loadShader, unloadShader
 ) where
@@ -21,7 +21,7 @@ import Data.Map as M
 
 import Control.Lens
 import Control.Monad
-import Control.Concurrent.MVar
+import Control.Monad.IO.Class
 
 import Graphics.Shader
 
@@ -69,16 +69,16 @@ instance Monad FeyState where
 
     return val = FeyState (\state -> return (state, val))
 
+instance MonadIO FeyState where
+    liftIO action = FeyState (\state -> do
+        val <- action
+        return (state, val))
+
 getStateVar :: Getting a State a -> FeyState a
 getStateVar getter = FeyState (\state -> return (state, state^.getter))
 
 setStateVar :: ASetter State State a b -> b -> FeyState ()
 setStateVar setter val = FeyState (\state -> return (set setter val state, ()))
-
-execute :: IO a -> FeyState a
-execute action = FeyState (\state -> do
-    val <- action
-    return (state, val))
 
 
 
@@ -100,13 +100,13 @@ runFeyState path (FeyState f) = do
 recordLog :: String -> FeyState ()
 recordLog msg = do
     maybeFile <- getStateVar logFile
-    execute $ forM_ maybeFile $ flip hPutStrLn msg
+    liftIO $ forM_ maybeFile $ flip hPutStrLn msg
 
 -- |Terminates the logging system
 endLogging :: FeyState ()
 endLogging = do
     maybeFile <- getStateVar logFile
-    execute $ forM_ maybeFile hClose
+    liftIO $ forM_ maybeFile hClose
     setStateVar logPath Nothing 
     setStateVar logFile Nothing
 
@@ -128,7 +128,7 @@ loadShader list = do
             return val
         Nothing -> do
             recordLog ("Loading shader " ++ key)
-            prog <- execute $ createShaderProgram sortedList
+            prog <- liftIO $ createShaderProgram sortedList
             setStateVar shaders $ M.insert key (prog, 1) shadMap
             return prog
 
@@ -147,6 +147,6 @@ unloadShader list = do
     case val of
         Just (prog, 0) -> do
             recordLog ("Unloading shader " ++ key)
-            execute $ deleteObjectName prog
+            liftIO $ deleteObjectName prog
             setStateVar shaders $ M.delete key newMap
         _ -> setStateVar shaders newMap

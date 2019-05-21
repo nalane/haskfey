@@ -19,7 +19,7 @@ import Foreign.Marshal.Array
 
 -- |Generates an OpenGL vertex buffer object
 createBuffer :: Storable a => Int -> Int -> [a] -> FeyState BufferObject
-createBuffer location stride vals = execute $ do
+createBuffer location stride vals = liftIO $ do
     buffer <- genObjectName
     bindBuffer ArrayBuffer $= Just buffer
 
@@ -37,20 +37,20 @@ createBuffer location stride vals = execute $ do
 -- |Generates a vertex array and sets it as the active one
 createVertexArray :: FeyState VertexArrayObject
 createVertexArray = do
-    vao <- execute genObjectName
+    vao <- liftIO genObjectName
     activateVertexArray vao
     return vao
 
 -- |Sets the given vao as the active one
 activateVertexArray :: VertexArrayObject -> FeyState ()
-activateVertexArray vao = execute (bindVertexArrayObject $= Just vao)
+activateVertexArray vao = liftIO (bindVertexArrayObject $= Just vao)
 
 -- |Gets the addressable location of the given variable in the program
 getUniformLocation :: Program -> String -> FeyState UniformLocation
-getUniformLocation prog var = execute $ get $ uniformLocation prog var
+getUniformLocation prog var = liftIO $ get $ uniformLocation prog var
 
 -- |Moves a 4x4 FeyMatrix to the specified ubo
 setUniformMatrix :: UniformLocation -> FeyMatrix -> FeyState ()
-setUniformMatrix ubo mat = execute $ do
+setUniformMatrix ubo mat = liftIO $ do
     m <- newMatrix RowMajor $ concat mat :: IO (GLmatrix GLfloat)
     uniform ubo $= m

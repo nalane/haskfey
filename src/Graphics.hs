@@ -24,14 +24,14 @@ import State
 
 -- |Draw the specified number of triangles
 drawTriangles :: NumArrayIndices -> FeyState ()
-drawTriangles = execute . drawArrays Triangles 0
+drawTriangles = liftIO . drawArrays Triangles 0
 
 -- |Draw the triangles using the indices specified by the input list
 drawIndexedTriangles :: [Word32] -> FeyState ()
-drawIndexedTriangles indices = execute $ withArray indices $ \ptr -> do
+drawIndexedTriangles indices = liftIO $ withArray indices $ \ptr -> do
     let numIndices = toEnum $ length indices
     drawElements Triangles numIndices UnsignedInt ptr
 
 -- |Set the currently active shader program
 setShader :: Program -> FeyState ()
-setShader prog = execute (currentProgram $= Just prog)
+setShader prog = liftIO (currentProgram $= Just prog)

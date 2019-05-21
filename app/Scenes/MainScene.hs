@@ -10,10 +10,11 @@ import Graphics.UI.GLFW as GLFW
 
 import Data.Maybe
 import Data.Word
+import Data.IORef
+import Data.StateVar
 
 import Control.Monad
 import Control.Lens (makeLenses, (^.))
-import Control.Concurrent.MVar
 
 data MainScene = MainScene {
     _prog :: Program,
@@ -21,7 +22,7 @@ data MainScene = MainScene {
     _vbo :: BufferObject,
     _cbo :: BufferObject,
     _ubo :: UniformLocation,
-    _time :: MVar Float,
+    _time :: IORef Float,
     _cam :: FeyMatrix,
     _proj :: FeyMatrix
 }
@@ -63,7 +64,7 @@ initScene = do
     location <- getUniformLocation shaderProg "mvpMatrix"
     setUniformMatrix location $ multiply proj cam
 
-    timeVar <- execute $ newMVar 0
+    timeVar <- liftIO $ newIORef 0
     let ms = MainScene {
         _prog = shaderProg,
         _vao = vertexArray,
@@ -78,12 +79,12 @@ initScene = do
 updateMainScene :: MainScene -> FeyState (Maybe String)
 updateMainScene ms = do
     win <- getStateVar window
-    shouldEnd <- execute $ GLFW.getKey (fromJust win) GLFW.Key'Escape
-    execute $ when (shouldEnd == GLFW.KeyState'Pressed) $ GLFW.setWindowShouldClose (fromJust win) True
+    shouldEnd <- liftIO $ GLFW.getKey (fromJust win) GLFW.Key'Escape
+    liftIO $ when (shouldEnd == GLFW.KeyState'Pressed) $ GLFW.setWindowShouldClose (fromJust win) True
 
-    execute $ modifyMVar_ (ms^.time) (return . (+0.01))
+    (ms^.time) $~ (+0.01)
 
-    swapScenes <- execute $ GLFW.getKey (fromJust win) GLFW.Key'Space
+    swapScenes <- liftIO $ GLFW.getKey (fromJust win) GLFW.Key'Space
     if swapScenes == GLFW.KeyState'Pressed
         then return $ Just "second" 
         else return Nothing
@@ -93,7 +94,7 @@ drawMainScene ms = do
     setShader (ms^.prog)
 
     activateVertexArray (ms^.vao)
-    t <- execute $ readMVar (ms^.time)
+    t <- get (ms^.time)
     setUniformMatrix (ms^.ubo) $
         multiply (ms^.proj) $
         multiply (ms^.cam) $
@@ -107,5 +108,5 @@ endMainScene ms = do
         (FragmentShader, "shaders/standard.frag"),
         (VertexShader, "shaders/standard.vert")]
 
-    execute $ deleteObjectNames [ms^.vbo, ms^.cbo]
-    execute $ deleteObjectName (ms^.vao)
+    liftIO $ deleteObjectNames [ms^.vbo, ms^.cbo]
+    liftIO $ deleteObjectName (ms^.vao)

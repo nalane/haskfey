@@ -11,13 +11,14 @@ import Scene
 
 import Control.Lens
 import Control.Monad.Loops
-import Control.Concurrent.MVar
 
 import Graphics.Rendering.OpenGL as GL
 import Graphics.UI.GLFW as GLFW
 
 import Data.Foldable
 import Data.Maybe
+import Data.IORef
+import Data.StateVar
 
 -- |Initializes the game engine and sets the window width and height
 initGame :: FeyState ()
@@ -35,34 +36,34 @@ runGame sceneMap sceneId = do
     let win = fromJust maybeWin
 
     currScene <- sceneMap sceneId
-    sceneMVar <- execute $ newMVar currScene
+    sceneRef <- liftIO $ newIORef currScene
 
     iterateUntil id $ do
-        scene <- execute $ readMVar sceneMVar
+        scene <- get sceneRef
 
-        execute GLFW.pollEvents
+        liftIO GLFW.pollEvents
         updateResult <- scene^.update
         case updateResult of
             Nothing -> do
-                execute $ GL.clear [GL.ColorBuffer, GL.DepthBuffer]
+                liftIO $ GL.clear [GL.ColorBuffer, GL.DepthBuffer]
                 scene^.draw
     
-                execute $ GLFW.swapBuffers win
+                liftIO $ GLFW.swapBuffers win
             Just newId -> do
                 newScene <- sceneMap newId
                 scene^.endScene
-                execute $ swapMVar sceneMVar newScene
+                sceneRef $= newScene
                 return ()
 
-        execute $ GLFW.windowShouldClose win
+        liftIO $ GLFW.windowShouldClose win
 
-    scene <- execute $ readMVar sceneMVar
+    scene <- get sceneRef
     scene^.endScene
 
 -- |Cleans up once the game is finished
 endGame :: FeyState ()
 endGame = do
     win <- getStateVar window
-    execute $ forM_ win GLFW.destroyWindow
-    execute GLFW.terminate
+    liftIO $ forM_ win GLFW.destroyWindow
+    liftIO GLFW.terminate
     setStateVar window Nothing

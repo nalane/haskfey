@@ -28,6 +28,7 @@ dependencies:
 - ekg
 - bytestring
 - containers
+- StateVar
 
 library:
   source-dirs: src
