@@ -9,7 +9,7 @@ module Graphics.Buffers (
 ) where
 
 import Matrix
-import State
+import FeyState
 
 import Graphics.Rendering.OpenGL
 

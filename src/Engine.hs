@@ -5,7 +5,7 @@ module Engine (
     initGame, runGame, endGame
 ) where
 
-import State
+import FeyState
 import Graphics
 import Scene
 
@@ -53,7 +53,6 @@ runGame sceneMap sceneId = do
                 newScene <- sceneMap newId
                 scene^.endScene
                 sceneRef $= newScene
-                return ()
 
         liftIO $ GLFW.windowShouldClose win
 

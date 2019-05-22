@@ -20,7 +20,7 @@ import Foreign.Ptr
 import Foreign.Storable
 import Foreign.Marshal.Array
 
-import State
+import FeyState
 
 -- |Draw the specified number of triangles
 drawTriangles :: NumArrayIndices -> FeyState ()

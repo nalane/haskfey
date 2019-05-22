@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 45fc8408574d0ec2e6bd7517c5aa6e4f41c0f872ae8239e372c18325c6a4d74a
+-- hash: 90cdff57068a13152aa3aa24d3ba8fe024729023dfb5e1cebb35d2e4664df571
 
 name:           haskfey
 version:        0.1.0.0
@@ -28,6 +28,10 @@ source-repository head
 library
   exposed-modules:
       Engine
+      FeyState
+      FeyState.FeyState
+      FeyState.Logging
+      FeyState.State
       Graphics
       Graphics.Buffers
       Graphics.Initialization
@@ -35,7 +39,6 @@ library
       Lib
       Matrix
       Scene
-      State
   other-modules:
       Paths_haskfey
   hs-source-dirs:

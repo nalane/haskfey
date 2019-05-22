@@ -8,7 +8,7 @@ module Graphics.Initialization (
 import Graphics.Rendering.OpenGL
 import Graphics.UI.GLFW as GLFW
 
-import State
+import FeyState
 
 import System.IO
 import System.Exit
