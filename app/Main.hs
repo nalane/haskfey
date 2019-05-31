@@ -14,6 +14,6 @@ mainGameMonad = do
     endLogging
 
 main :: IO ()
-main = do
-    forkServer (pack "localhost") 8000
+main = --do
+    --forkServer (pack "localhost") 8000
     runFeyState "log.txt" mainGameMonad
