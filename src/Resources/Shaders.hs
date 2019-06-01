@@ -1,8 +1,9 @@
 {- |Contains functions for setting up shader programs
 -}
 
-module Graphics.Shader (
-    createShaderProgram, ShaderType(..), Program(..)
+module Resources.Shaders (
+    createShaderProgram, destroyShaderProgram,
+    ShaderType(..), Program(..)
 ) where
 
 import Graphics.Rendering.OpenGL
@@ -50,3 +51,7 @@ createShaderProgram list = do
     deleteObjectNames shaders
 
     return prog
+
+-- |Removes the given program from memory
+destroyShaderProgram :: Program -> IO ()
+destroyShaderProgram = deleteObjectName

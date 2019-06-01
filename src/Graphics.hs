@@ -4,12 +4,10 @@
 module Graphics (
     module Graphics.Initialization,
     module Graphics.Buffers,
-    setShader, ShaderType(..), Program(..),
-    drawTriangles, drawIndexedTriangles,
+    drawTriangles, drawIndexedTriangles, setShader,
     Vertex3(..), GLfloat(..)
 ) where
 
-import Graphics.Shader
 import Graphics.Initialization
 import Graphics.Buffers
 
