@@ -34,7 +34,7 @@ instance Monad FeyState where
         let (FeyState rhs) = f val
         rhs newState)
 
-    return val = FeyState (\state -> return (state, val))
+    return = pure
 
 instance MonadIO FeyState where
     liftIO action = FeyState (\state -> do

@@ -32,4 +32,4 @@ drawIndexedTriangles indices = liftIO $ withArray indices $ \ptr -> do
 
 -- |Set the currently active shader program
 setShader :: Program -> FeyState ()
-setShader prog = liftIO (currentProgram $= Just prog)
+setShader prog = currentProgram $= Just prog

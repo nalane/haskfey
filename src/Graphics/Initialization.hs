@@ -40,7 +40,7 @@ initGLFW = do
 
 -- |Sets up OpenGL variables that determine how it renders
 initOpenGL :: FeyState ()
-initOpenGL = liftIO $ do
+initOpenGL = do
     clearColor $= Color4 0 0 0 1
     depthFunc $= Just Less
     cullFace $= Just Back
