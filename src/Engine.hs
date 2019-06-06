@@ -32,8 +32,7 @@ initGame = do
 -- |The main game loop
 runGame :: (String -> FeyState Scene) -> String -> FeyState ()
 runGame sceneMap sceneId = do
-    maybeWin <- getStateVar window
-    let win = fromJust maybeWin
+    win <- fromJust <$> getStateVar window
 
     currScene <- sceneMap sceneId
     sceneRef <- liftIO $ newIORef currScene

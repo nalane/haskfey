@@ -19,8 +19,8 @@ import Data.Maybe
 -- |Inititalizes GLFW. Returns the GLFW window
 initGLFW :: FeyState Window
 initGLFW = do
-    w <- getStateVar width
-    h <- getStateVar height
+    w <- fromJust <$> getStateVar width
+    h <- fromJust <$> getStateVar height
     liftIO $ do 
         GLFW.setErrorCallback $ Just $ \_ desc -> hPutStrLn stderr desc
         GLFW.init >>= flip unless (die "FATAL ERROR: Could not init GLFW")
@@ -31,7 +31,7 @@ initGLFW = do
         GLFW.windowHint $ GLFW.WindowHint'OpenGLForwardCompat True
         GLFW.windowHint $ GLFW.WindowHint'Samples $ Just 16
 
-        maybeWindow <- GLFW.createWindow (fromJust w) (fromJust h) "Demo" Nothing Nothing
+        maybeWindow <- GLFW.createWindow w h "Demo" Nothing Nothing
         GLFW.makeContextCurrent maybeWindow
         GLFW.swapInterval 1
 

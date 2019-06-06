@@ -51,10 +51,10 @@ initScene = do
     vertexBuffer <- createBuffer 0 3 vertices
     colorBuffer <- createBuffer 1 3 colors
 
-    w <- getStateVar width
-    h <- getStateVar height
+    w <- fromJust <$> getStateVar width
+    h <- fromJust <$> getStateVar height
     let cam = camera [0, 0, 0.5] [0, 0, 0] [0, 1, 0]
-    let proj = orthographic (fromJust w) (fromJust h)
+    let proj = orthographic w h
     location <- getUniformLocation shaderProg "mvpMatrix"
     setUniformMatrix location $ multiply proj cam
 
@@ -72,13 +72,14 @@ initScene = do
 
 updateSecondScene :: SecondScene -> FeyState (Maybe String)
 updateSecondScene ms = do
-    win <- getStateVar window
-    shouldEnd <- liftIO $ GLFW.getKey (fromJust win) GLFW.Key'Escape
-    liftIO $ when (shouldEnd == GLFW.KeyState'Pressed) $ GLFW.setWindowShouldClose (fromJust win) True
+    win <- fromJust <$> getStateVar window
+    shouldEnd <- liftIO $ GLFW.getKey win GLFW.Key'Escape
+    liftIO $ when (shouldEnd == GLFW.KeyState'Pressed) $
+        GLFW.setWindowShouldClose win True
 
     (ms^.time) $~ (+0.01)
 
-    swapScenes <- liftIO $ GLFW.getKey (fromJust win) GLFW.Key'Space
+    swapScenes <- liftIO $ GLFW.getKey win GLFW.Key'Space
     if swapScenes == GLFW.KeyState'Pressed
         then return $ Just "main" 
         else return Nothing

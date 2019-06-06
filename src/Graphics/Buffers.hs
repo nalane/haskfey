@@ -43,7 +43,7 @@ createVertexArray = do
 
 -- |Sets the given vao as the active one
 activateVertexArray :: VertexArrayObject -> FeyState ()
-activateVertexArray vao = liftIO (bindVertexArrayObject $= Just vao)
+activateVertexArray vao = bindVertexArrayObject $= Just vao
 
 -- |Gets the addressable location of the given variable in the program
 getUniformLocation :: Program -> String -> FeyState UniformLocation
