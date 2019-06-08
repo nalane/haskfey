@@ -16,7 +16,7 @@ import Control.Monad
 import Control.Lens
 
 data SecondScene = SecondScene {
-    _prog :: Program,
+    _prog :: Resource Program,
     _vao :: VertexArrayObject,
     _vbo :: BufferObject,
     _cbo :: BufferObject,
@@ -43,9 +43,9 @@ colors = [
 initScene :: FeyState Scene
 initScene = do
     shaderProg <- loadShader [
-        (FragmentShader, "shaders/standard.frag"),
-        (VertexShader, "shaders/standard.vert")]
-    setShader shaderProg
+        (FragmentShader, "feyData/shaders/bare/bare.frag"),
+        (VertexShader, "feyData/shaders/bare/bare.vert")]
+    setShader $ unwrap shaderProg
 
     vertexArray <- createVertexArray
     vertexBuffer <- createBuffer 0 3 vertices
@@ -55,7 +55,7 @@ initScene = do
     h <- fromJust <$> getStateVar height
     let cam = camera [0, 0, 0.5] [0, 0, 0] [0, 1, 0]
     let proj = orthographic w h
-    location <- getUniformLocation shaderProg "mvpMatrix"
+    location <- getUniformLocation (unwrap shaderProg) "mvpMatrix"
     setUniformMatrix location $ multiply proj cam
 
     timeVar <- liftIO $ newIORef 0
@@ -86,7 +86,7 @@ updateSecondScene ms = do
 
 drawSecondScene :: SecondScene -> FeyState ()
 drawSecondScene ms = do
-    setShader (ms^.prog)
+    setShader $ unwrap (ms^.prog)
 
     activateVertexArray (ms^.vao)
     t <- get (ms^.time)
@@ -99,9 +99,7 @@ drawSecondScene ms = do
 
 endSecondScene :: SecondScene -> FeyState ()
 endSecondScene ms = do
-    unloadShader [
-        (FragmentShader, "shaders/standard.frag"),
-        (VertexShader, "shaders/standard.vert")]
+    unloadShader (ms^.prog)
 
     liftIO $ deleteObjectNames [ms^.vbo, ms^.cbo]
     liftIO $ deleteObjectName (ms^.vao)

@@ -1,4 +1,5 @@
 module FeyState.ResourceHandler (
+    Resource(..), unwrap,
     loadShader, unloadShader
 ) where
 
@@ -12,12 +13,20 @@ import Data.List
 import Data.Maybe
 import qualified Data.Map as M
 
+data Resource a = Resource String a
+
+resKey :: Resource a -> String
+resKey (Resource k _) = k
+
+unwrap :: Resource a -> a
+unwrap (Resource _ v) = v
+
 shaderKey :: [(ShaderType, FilePath)] -> String
 shaderKey = concatMap snd . sortBy (flip compare `on` fst)
 
 -- |Returns a shader specified by the files in the given list.
 -- If the shader has already been loaded, the shader is taken from cache
-loadShader :: [(ShaderType, FilePath)] -> FeyState Program
+loadShader :: [(ShaderType, FilePath)] -> FeyState (Resource Program)
 loadShader list = do
     shadMap <- getStateVar shaders
 
@@ -28,20 +37,20 @@ loadShader list = do
         Just (val, count) -> do
             setStateVar shaders $
                 M.adjust (\(prog, count) -> (prog, count + 1)) key shadMap
-            return val
+            return $ Resource key val
         Nothing -> do
             recordLog ("Loading shader " ++ key)
             prog <- liftIO $ createShaderProgram list
             setStateVar shaders $ M.insert key (prog, 1) shadMap
-            return prog
+            return $ Resource key prog
 
 -- |Given a shader, decrements its reference count and deletes it from cache
 -- if its reference count reaches zero.
-unloadShader :: [(ShaderType, FilePath)] -> FeyState ()
-unloadShader list = do
+unloadShader :: Resource Program -> FeyState ()
+unloadShader res = do
     shadMap <- getStateVar shaders
 
-    let key = shaderKey list
+    let key = resKey res
     let newMap = M.adjust (\(item, count) -> (item, count - 1)) key shadMap
     let val = M.lookup key newMap
 
