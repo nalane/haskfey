@@ -3,7 +3,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Resources.Model (
-    Model, createModel, destroyModel
+    Model, createModel, drawModel, destroyModel
 ) where
 
 import Graphics.Rendering.OpenGL
@@ -13,6 +13,7 @@ import System.IO
 import Data.List
 import Data.Either
 import Control.Lens (makeLenses, (^.))
+import Control.Monad
 
 import Text.Parsec
 import Text.Parsec.ByteString
@@ -36,7 +37,7 @@ makeLenses ''Model
 --nVertParser :: Int -> Parsec s u [GLfloat]
 nVertParser n = mapM (\_ -> do
     spaces
-    floating) [1..n]
+    ap sign floating) [1..n]
 
 --vertex2Parser :: Parsec s u (Vertex2 GLfloat)
 vertex2Parser = do
@@ -52,6 +53,7 @@ vertex3Parser = do
 materialParser = do
     diffuse <- vertex3Parser
     specular <- vertex3Parser
+    spaces
     i <- read <$> many1 digit
     return $ Material diffuse specular i
 
@@ -61,23 +63,23 @@ textureParser = many $ noneOf "\n"
 --uvParser :: Parsec s u (Vertex2 GLfloat)
 uvParser = do
     index <- many1 digit
-    space
+    spaces
     vertex2Parser
 
 --mapParser :: Parsec s u (Int, Int)
 mapParser = do
     vertIndex <- read <$> many1 digit
-    space
+    spaces
     uvIndex <- read <$> many1 digit
     return (vertIndex, uvIndex)
 
 --helper :: Parsec s u a -> Parsec s u [a]
 helper p = do
     num <- read <$> many1 digit
-    newline
+    spaces
     count num (do
         res <- p
-        newline
+        spaces
         return res)
 
 parser :: Parser ([Material], [Vertex3 GLfloat], [String], [Vertex2 GLfloat], [(Int, Int)])

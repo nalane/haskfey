@@ -2,8 +2,9 @@
 -}
 
 module Matrix (
-    FeyMatrix(..), identity, translate, rotate, camera, orthographic, multiply,
-    dot, sub, cross, normalize
+    FeyMatrix(..), identity, translate, scale, rotate,
+    camera, orthographic,
+    multiply, dot, sub, cross, normalize
 ) where
 
 import Graphics.Rendering.OpenGL (GLfloat)
@@ -30,6 +31,13 @@ translate (x:y:z:_) = [
     [1, 0, 0, x],
     [0, 1, 0, y],
     [0, 0, 1, z],
+    [0, 0, 0, 1]]
+
+scale :: Float -> FeyMatrix
+scale s = [
+    [s, 0, 0, 0],
+    [0, s, 0, 0],
+    [0, 0, s, 0],
     [0, 0, 0, 1]]
 
 -- |Creates a metrix to rotate by theta degrees about the given axis

@@ -17,9 +17,7 @@ import Control.Lens
 
 data SecondScene = SecondScene {
     _prog :: Resource Program,
-    _vao :: VertexArrayObject,
-    _vbo :: BufferObject,
-    _cbo :: BufferObject,
+    _model :: Resource Model,
     _ubo :: UniformLocation,
     _time :: IORef Float,
     _cam :: FeyMatrix,
@@ -28,18 +26,6 @@ data SecondScene = SecondScene {
 
 makeLenses ''SecondScene
 
-vertices :: [Vertex3 GLfloat]
-vertices = [
-    Vertex3 (-0.5) 0.5 0,
-    Vertex3 (-0.5) (-0.5) 0,
-    Vertex3 0.5 (-0.5) 0]
-
-colors :: [Vertex3 GLfloat]
-colors = [
-    Vertex3 1 1 0,
-    Vertex3 0 1 1,
-    Vertex3 1 0 1]
-
 initScene :: FeyState Scene
 initScene = do
     shaderProg <- loadShader [
@@ -47,9 +33,7 @@ initScene = do
         (VertexShader, "feyData/shaders/bare/bare.vert")]
     liftIO $ setShader $ unwrap shaderProg
 
-    vertexArray <- liftIO createVertexArray
-    vertexBuffer <- liftIO $ createBuffer 0 3 vertices
-    colorBuffer <- liftIO $ createBuffer 1 3 colors
+    m <- loadModel "feyData/library/cube.fey.model"
 
     w <- fromJust <$> getStateVar width
     h <- fromJust <$> getStateVar height
@@ -61,9 +45,7 @@ initScene = do
     timeVar <- liftIO $ newIORef 0
     let ms = SecondScene {
         _prog = shaderProg,
-        _vao = vertexArray,
-        _vbo = vertexBuffer,
-        _cbo = colorBuffer,
+        _model = m,
         _ubo = location,
         _time = timeVar,
         _cam = cam,
@@ -88,18 +70,16 @@ drawSecondScene :: SecondScene -> FeyState ()
 drawSecondScene ms = do
     liftIO $ setShader $ unwrap (ms^.prog)
 
-    liftIO $ activateVertexArray (ms^.vao)
     t <- get (ms^.time)
     liftIO $ setUniformMatrix (ms^.ubo) $
         multiply (ms^.proj) $
         multiply (ms^.cam) $
-        rotate t [0, 1, 0]
+        multiply (rotate t [1, 1, 0]) $ 
+        scale 0.1
         
-    liftIO $ drawTriangles 3
+    liftIO $ drawModel $ unwrap (ms^.model)
 
 endSecondScene :: SecondScene -> FeyState ()
 endSecondScene ms = do
     unloadShader (ms^.prog)
-
-    liftIO $ deleteObjectNames [ms^.vbo, ms^.cbo]
-    liftIO $ deleteObjectName (ms^.vao)
+    unloadModel (ms^.model)
