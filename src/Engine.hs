@@ -2,7 +2,7 @@
 -}
 
 module Engine (
-    initGame, runGame, endGame
+    isKeyPressed, initGame, runGame, endGame
 ) where
 
 import FeyState
@@ -11,6 +11,7 @@ import Scene
 
 import Control.Lens
 import Control.Monad.Loops
+import Control.Concurrent.MVar
 
 import Graphics.Rendering.OpenGL as GL
 import Graphics.UI.GLFW as GLFW
@@ -19,18 +20,30 @@ import Data.Foldable
 import Data.Maybe
 import Data.IORef
 import Data.StateVar
+import qualified Data.Map as M
+
+isKeyPressed :: GLFW.Key -> FeyState Bool
+isKeyPressed k = do
+    keyMap <- getStateVar keyState >>= (liftIO . readMVar)
+    
+    let res = M.lookup k keyMap
+    case res of
+        Just True -> return True
+        _ -> return False
 
 -- |Initializes the game engine and sets the window width and height
 initGame :: FeyState ()
 initGame = do
     let w = 640
     let h = 480
-
     setStateVar width $ Just 640
     setStateVar height $ Just 480
-    win <- liftIO $ initGLFW w h
-    liftIO initOpenGL
+
+    k <- getStateVar keyState
+    win <- liftIO $ initGLFW w h k
     setStateVar window (Just win)
+
+    liftIO initOpenGL
 
 -- |The main game loop
 runGame :: (String -> FeyState Scene) -> String -> FeyState ()
@@ -52,6 +65,9 @@ runGame sceneMap sceneId = do
     
                 liftIO $ GLFW.swapBuffers win
             Just newId -> do
+                ks <- getStateVar keyState
+                liftIO $ swapMVar ks M.empty
+
                 newScene <- sceneMap newId
                 scene^.endScene
                 sceneRef $= newScene

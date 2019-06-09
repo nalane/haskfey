@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module FeyState.State (
-    State(..), logPath, logFile, window, width, height, shaders, models,
+    State(..), logPath, logFile, window, width, height, keyState, shaders, models,
     newState
 ) where
 
@@ -15,6 +15,7 @@ import Data.Map
 
 import System.IO
 import Control.Lens
+import Control.Concurrent.MVar
 
 import Graphics.UI.GLFW as GLFW
 import Graphics.Rendering.OpenGL
@@ -27,6 +28,8 @@ data State = State {
     _width :: Maybe Int,
     _height :: Maybe Int,
 
+    _keyState :: MVar (Map GLFW.Key Bool),
+
     --Resources
     _shaders :: Map String (Program, Int),
     _models :: Map String (Model, Int)
@@ -37,4 +40,5 @@ makeLenses ''State
 newState :: String -> IO State
 newState path = do
     fh <- openFile path WriteMode
-    return $ State (Just path) (Just fh) Nothing Nothing Nothing empty empty
+    k <- newMVar empty
+    return $ State (Just path) (Just fh) Nothing Nothing Nothing k empty empty

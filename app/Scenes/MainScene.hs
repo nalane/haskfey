@@ -79,14 +79,13 @@ initScene = do
 updateMainScene :: MainScene -> FeyState (Maybe String)
 updateMainScene ms = do
     win <- fromJust <$> getStateVar window
-    shouldEnd <- liftIO $ GLFW.getKey win GLFW.Key'Escape
-    liftIO $ when (shouldEnd == GLFW.KeyState'Pressed) $
-        GLFW.setWindowShouldClose win True
+    shouldEnd <- isKeyPressed GLFW.Key'Escape
+    when shouldEnd $ liftIO $ GLFW.setWindowShouldClose win True
 
     (ms^.time) $~ (+0.01)
 
-    swapScenes <- liftIO $ GLFW.getKey win GLFW.Key'Space
-    if swapScenes == GLFW.KeyState'Pressed
+    swapScenes <- isKeyPressed GLFW.Key'Space
+    if swapScenes
         then return $ Just "second" 
         else return Nothing
 

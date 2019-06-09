@@ -20,9 +20,6 @@ import Text.Parsec.Char
 
 data Material = Material (Vertex3 GLfloat) (Vertex3 GLfloat) Int
 
-_diffuse :: Material -> Vertex3 GLfloat
-_diffuse (Material d _ _) = d
-
 data Model = Model {
     _vao :: VertexArrayObject,
     _vbo :: BufferObject,
@@ -52,28 +49,27 @@ materialParser = do
     diffuse <- vertex3Parser
     specular <- vertex3Parser
     spaces
-    i <- read <$> many1 digit
-    return $ Material diffuse specular i
+    Material diffuse specular <$> nat
 
 textureParser :: Parser String
-textureParser = many $ noneOf "\n"
+textureParser = many $ noneOf "\r\n"
 
 uvParser :: Parser (Vertex2 GLfloat)
 uvParser = do
-    index <- many1 digit
+    index <- nat
     spaces
     vertex2Parser
 
 mapParser :: Parser (Int, Int)
 mapParser = do
-    vertIndex <- read <$> many1 digit
+    vertIndex <- nat
     spaces
-    uvIndex <- read <$> many1 digit
+    uvIndex <- nat
     return (vertIndex, uvIndex)
 
 helper :: Parser a -> Parser [a]
 helper p = do
-    num <- read <$> many1 digit
+    num <- nat
     spaces
     count num (do
         res <- p
@@ -89,14 +85,17 @@ parser = do
     a <- helper mapParser
     return (m, v, t, u, a)
 
+
+
 createModel :: FilePath -> IO Model
 createModel path = do
     (mats, verts, texts, uvs, mapping) <- fromRight ([], [], [], [], []) <$>
         parseFromFile parser path
 
+    let diffuse (Material d _ _) = d
     let v = map (\(index,_) -> verts !! index) mapping
     let u = map (\(_, index) -> uvs !! index) mapping
-    let m = replicate (length v) (_diffuse $ head mats)
+    let m = replicate (length v) (diffuse $ head mats)
 
     vertexArray <- createVertexArray
     vertexBuffer <- createBuffer 0 3 v
