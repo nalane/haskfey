@@ -23,10 +23,13 @@ import Data.StateVar
 -- |Initializes the game engine and sets the window width and height
 initGame :: FeyState ()
 initGame = do
+    let w = 640
+    let h = 480
+
     setStateVar width $ Just 640
     setStateVar height $ Just 480
-    win <- initGLFW
-    initOpenGL
+    win <- liftIO $ initGLFW w h
+    liftIO initOpenGL
     setStateVar window (Just win)
 
 -- |The main game loop

@@ -1,6 +1,7 @@
 module FeyState.ResourceHandler (
     Resource(..), unwrap,
-    loadShader, unloadShader
+    loadShader, unloadShader,
+    loadModel, unloadModel
 ) where
 
 import Resources
@@ -60,3 +61,38 @@ unloadShader res = do
             liftIO $ destroyShaderProgram prog
             setStateVar shaders $ M.delete key newMap
         _ -> setStateVar shaders newMap
+
+-- |Returns a model specified by the given file
+-- If the model has already been loaded, the model is taken from cache
+loadModel :: FilePath -> FeyState (Resource Model)
+loadModel key = do
+    modelMap <- getStateVar models
+    let mapVal = M.lookup key modelMap
+
+    case mapVal of
+        Just (val, count) -> do
+            setStateVar models $
+                M.adjust (\(model, count) -> (model, count + 1)) key modelMap
+            return $ Resource key val
+        Nothing -> do
+            recordLog ("Loading model " ++ key)
+            model <- liftIO $ createModel key
+            setStateVar models $ M.insert key (model, 1) modelMap
+            return $ Resource key model
+
+-- |Given a model, decrements its reference count and deletes it from cache
+-- if its reference count reaches zero.
+unloadModel :: Resource Model -> FeyState ()
+unloadModel res = do
+    modelMap <- getStateVar models
+
+    let key = resKey res
+    let newMap = M.adjust (\(item, count) -> (item, count - 1)) key modelMap
+    let val = M.lookup key newMap
+
+    case val of
+        Just (prog, 0) -> do
+            recordLog ("Unloading model " ++ key)
+            liftIO $ destroyModel prog
+            setStateVar models $ M.delete key newMap
+        _ -> setStateVar models newMap

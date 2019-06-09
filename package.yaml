@@ -29,6 +29,8 @@ dependencies:
 - bytestring
 - containers
 - StateVar
+- parsec
+- parsec3-numbers
 
 library:
   source-dirs: src

@@ -9,7 +9,6 @@ module Graphics.Buffers (
 ) where
 
 import Matrix
-import FeyState
 
 import Graphics.Rendering.OpenGL
 
@@ -18,8 +17,8 @@ import Foreign.Storable
 import Foreign.Marshal.Array
 
 -- |Generates an OpenGL vertex buffer object
-createBuffer :: Storable a => Int -> Int -> [a] -> FeyState BufferObject
-createBuffer location stride vals = liftIO $ do
+createBuffer :: Storable a => Int -> Int -> [a] -> IO BufferObject
+createBuffer location stride vals = do
     buffer <- genObjectName
     bindBuffer ArrayBuffer $= Just buffer
 
@@ -35,22 +34,22 @@ createBuffer location stride vals = liftIO $ do
     return buffer
 
 -- |Generates a vertex array and sets it as the active one
-createVertexArray :: FeyState VertexArrayObject
+createVertexArray :: IO VertexArrayObject
 createVertexArray = do
-    vao <- liftIO genObjectName
+    vao <- genObjectName
     activateVertexArray vao
     return vao
 
 -- |Sets the given vao as the active one
-activateVertexArray :: VertexArrayObject -> FeyState ()
+activateVertexArray :: VertexArrayObject -> IO ()
 activateVertexArray vao = bindVertexArrayObject $= Just vao
 
 -- |Gets the addressable location of the given variable in the program
-getUniformLocation :: Program -> String -> FeyState UniformLocation
-getUniformLocation prog var = liftIO $ get $ uniformLocation prog var
+getUniformLocation :: Program -> String -> IO UniformLocation
+getUniformLocation prog var = get $ uniformLocation prog var
 
 -- |Moves a 4x4 FeyMatrix to the specified ubo
-setUniformMatrix :: UniformLocation -> FeyMatrix -> FeyState ()
-setUniformMatrix ubo mat = liftIO $ do
+setUniformMatrix :: UniformLocation -> FeyMatrix -> IO ()
+setUniformMatrix ubo mat = do
     m <- newMatrix RowMajor $ concat mat :: IO (GLmatrix GLfloat)
     uniform ubo $= m

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 733caab76a6407cda1e59b03364e5b2335a61de76c28d1cd617822269537f159
+-- hash: 3febefb979478224a42512fe7e844d5bcb4a5cbed7e6ad4d9cac8780e9812448
 
 name:           haskfey
 version:        0.1.0.0
@@ -39,6 +39,7 @@ library
       Lib
       Matrix
       Resources
+      Resources.Model
       Resources.Shaders
       Scene
   other-modules:
@@ -55,6 +56,8 @@ library
     , ekg
     , lens
     , monad-loops
+    , parsec
+    , parsec3-numbers
   default-language: Haskell2010
 
 executable haskfey-exe
@@ -78,6 +81,8 @@ executable haskfey-exe
     , haskfey
     , lens
     , monad-loops
+    , parsec
+    , parsec3-numbers
   default-language: Haskell2010
 
 test-suite haskfey-test
@@ -99,6 +104,8 @@ test-suite haskfey-test
     , haskfey
     , lens
     , monad-loops
+    , parsec
+    , parsec3-numbers
     , tasty
     , tasty-hunit
   default-language: Haskell2010

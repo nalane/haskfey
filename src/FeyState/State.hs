@@ -4,9 +4,11 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module FeyState.State (
-    State(..), logPath, logFile, window, width, height, shaders,
+    State(..), logPath, logFile, window, width, height, shaders, models,
     newState
 ) where
+
+import Resources
 
 import Data.Maybe
 import Data.Map
@@ -26,7 +28,8 @@ data State = State {
     _height :: Maybe Int,
 
     --Resources
-    _shaders :: Map String (Program, Int)
+    _shaders :: Map String (Program, Int),
+    _models :: Map String (Model, Int)
 }
 
 makeLenses ''State
@@ -34,4 +37,4 @@ makeLenses ''State
 newState :: String -> IO State
 newState path = do
     fh <- openFile path WriteMode
-    return $ State (Just path) (Just fh) Nothing Nothing Nothing empty
+    return $ State (Just path) (Just fh) Nothing Nothing Nothing empty empty

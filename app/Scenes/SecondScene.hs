@@ -45,18 +45,18 @@ initScene = do
     shaderProg <- loadShader [
         (FragmentShader, "feyData/shaders/bare/bare.frag"),
         (VertexShader, "feyData/shaders/bare/bare.vert")]
-    setShader $ unwrap shaderProg
+    liftIO $ setShader $ unwrap shaderProg
 
-    vertexArray <- createVertexArray
-    vertexBuffer <- createBuffer 0 3 vertices
-    colorBuffer <- createBuffer 1 3 colors
+    vertexArray <- liftIO createVertexArray
+    vertexBuffer <- liftIO $ createBuffer 0 3 vertices
+    colorBuffer <- liftIO $ createBuffer 1 3 colors
 
     w <- fromJust <$> getStateVar width
     h <- fromJust <$> getStateVar height
     let cam = camera [0, 0, 0.5] [0, 0, 0] [0, 1, 0]
     let proj = orthographic w h
-    location <- getUniformLocation (unwrap shaderProg) "mvpMatrix"
-    setUniformMatrix location $ multiply proj cam
+    location <- liftIO $ getUniformLocation (unwrap shaderProg) "mvpMatrix"
+    liftIO $ setUniformMatrix location $ multiply proj cam
 
     timeVar <- liftIO $ newIORef 0
     let ms = SecondScene {
@@ -86,16 +86,16 @@ updateSecondScene ms = do
 
 drawSecondScene :: SecondScene -> FeyState ()
 drawSecondScene ms = do
-    setShader $ unwrap (ms^.prog)
+    liftIO $ setShader $ unwrap (ms^.prog)
 
-    activateVertexArray (ms^.vao)
+    liftIO $ activateVertexArray (ms^.vao)
     t <- get (ms^.time)
-    setUniformMatrix (ms^.ubo) $
+    liftIO $ setUniformMatrix (ms^.ubo) $
         multiply (ms^.proj) $
         multiply (ms^.cam) $
         rotate t [0, 1, 0]
         
-    drawTriangles 3
+    liftIO $ drawTriangles 3
 
 endSecondScene :: SecondScene -> FeyState ()
 endSecondScene ms = do
