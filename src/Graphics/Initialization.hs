@@ -12,7 +12,6 @@ import System.IO
 import System.Exit
 
 import Control.Monad
-import Control.Lens
 import Control.Concurrent.MVar
 
 import Data.Maybe

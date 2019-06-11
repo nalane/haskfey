@@ -9,7 +9,6 @@ import Graphics
 
 import System.IO
 
-import Data.List
 import Data.Either
 import qualified Data.Vector as V
 import Data.Vector ((!))
@@ -20,7 +19,6 @@ import Control.Monad
 import Text.Parsec
 import Text.Parsec.ByteString
 import Text.Parsec.Number
-import Text.Parsec.Char
 
 data Material = Material (Vertex3 GLfloat) (Vertex3 GLfloat) Int
 

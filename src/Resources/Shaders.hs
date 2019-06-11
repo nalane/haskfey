@@ -11,7 +11,6 @@ import Graphics.UI.GLFW as GLFW
 
 import System.IO
 import Control.Monad
-import Data.List
 
 loadShader :: ShaderType -> String -> IO Shader
 loadShader sType path = do

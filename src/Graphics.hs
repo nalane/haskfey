@@ -14,8 +14,6 @@ import Graphics.Buffers
 import Graphics.Rendering.OpenGL
 import Data.Word
 
-import Foreign.Ptr
-import Foreign.Storable
 import Foreign.Marshal.Array
 
 -- |Draw the specified number of triangles
