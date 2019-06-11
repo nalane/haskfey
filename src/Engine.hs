@@ -36,8 +36,8 @@ initGame :: FeyState ()
 initGame = do
     let w = 640
     let h = 480
-    setStateVar width $ Just 640
-    setStateVar height $ Just 480
+    setStateVar width $ Just w
+    setStateVar height $ Just h
 
     k <- getStateVar keyState
     win <- liftIO $ initGLFW w h k

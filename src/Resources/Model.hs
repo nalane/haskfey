@@ -8,8 +8,12 @@ import Graphics.Rendering.OpenGL
 import Graphics
 
 import System.IO
+
 import Data.List
 import Data.Either
+import qualified Data.Vector as V
+import Data.Vector ((!))
+
 import Control.Lens (makeLenses, (^.))
 import Control.Monad
 
@@ -76,29 +80,33 @@ helper p = do
         spaces
         return res)
 
-parser :: Parser ([Material], [Vertex3 GLfloat], [String], [Vertex2 GLfloat], [(Int, Int)])
+parser :: Parser (
+    V.Vector Material, 
+    V.Vector (Vertex3 GLfloat),
+    V.Vector String,
+    V.Vector (Vertex2 GLfloat),
+    V.Vector (Int, Int))
 parser = do
-    m <- helper materialParser
-    v <- helper vertex3Parser
-    t <- helper textureParser
-    u <- helper uvParser
-    a <- helper mapParser
+    m <- V.fromList <$> helper materialParser
+    v <- V.fromList <$> helper vertex3Parser
+    t <- V.fromList <$> helper textureParser
+    u <- V.fromList <$> helper uvParser
+    a <- V.fromList <$> helper mapParser
     return (m, v, t, u, a)
 
 
 
 createModel :: FilePath -> IO Model
 createModel path = do
-    (mats, verts, texts, uvs, mapping) <- fromRight ([], [], [], [], []) <$>
-        parseFromFile parser path
+    let fromEither (Right a) = a
+    (mats, verts, _, _, mapping) <- fromEither <$> parseFromFile parser path
 
     let diffuse (Material d _ _) = d
-    let v = map (\(index,_) -> verts !! index) mapping
-    let u = map (\(_, index) -> uvs !! index) mapping
-    let m = replicate (length v) (diffuse $ head mats)
-
+    let v = V.map (\(index,_) -> verts ! index) mapping
+    let m = replicate (length v) (diffuse $ V.head mats)
+ 
     vertexArray <- createVertexArray
-    vertexBuffer <- createBuffer 0 3 v
+    vertexBuffer <- createBuffer 0 3 $ V.toList v
     colorBuffer <- createBuffer 1 3 m
 
     return $ Model vertexArray vertexBuffer colorBuffer (length v)

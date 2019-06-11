@@ -31,6 +31,7 @@ dependencies:
 - StateVar
 - parsec
 - parsec3-numbers
+- vector
 
 library:
   source-dirs: src

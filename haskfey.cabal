@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3febefb979478224a42512fe7e844d5bcb4a5cbed7e6ad4d9cac8780e9812448
+-- hash: dbb59f276aefd0d64edf69cdf5335d0a6051504317a058f6133b1b2af2850cb2
 
 name:           haskfey
 version:        0.1.0.0
@@ -58,6 +58,7 @@ library
     , monad-loops
     , parsec
     , parsec3-numbers
+    , vector
   default-language: Haskell2010
 
 executable haskfey-exe
@@ -83,6 +84,7 @@ executable haskfey-exe
     , monad-loops
     , parsec
     , parsec3-numbers
+    , vector
   default-language: Haskell2010
 
 test-suite haskfey-test
@@ -108,4 +110,5 @@ test-suite haskfey-test
     , parsec3-numbers
     , tasty
     , tasty-hunit
+    , vector
   default-language: Haskell2010
