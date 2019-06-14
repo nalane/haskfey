@@ -22,6 +22,9 @@ import Text.Parsec.Number
 
 data Material = Material (Vertex3 GLfloat) (Vertex3 GLfloat) Int
 
+defaultMaterial :: Material
+defaultMaterial = Material (Vertex3 0.8 0.8 0.8) (Vertex3 0.8 0.8 0.8) 1
+
 data Model = Model {
     _vao :: VertexArrayObject,
     _vbo :: BufferObject,
@@ -97,11 +100,12 @@ parser = do
 createModel :: FilePath -> IO Model
 createModel path = do
     let fromEither (Right a) = a
+    let diffuse (Material d _ _) = d
+    
     (mats, verts, _, _, mapping) <- fromEither <$> parseFromFile parser path
 
-    let diffuse (Material d _ _) = d
     let v = V.map (\(index,_) -> verts ! index) mapping
-    let m = replicate (length v) (diffuse $ V.head mats)
+    let m = replicate (length v) (diffuse $ V.head $ V.snoc mats defaultMaterial)
  
     vertexArray <- createVertexArray
     vertexBuffer <- createBuffer 0 3 $ V.toList v

@@ -40,7 +40,6 @@ initScene = do
     let cam = camera [0, 0, 0.5] [0, 0, 0] [0, 1, 0]
     let proj = orthographic w h
     location <- liftIO $ getUniformLocation (unwrap shaderProg) "mvpMatrix"
-    liftIO $ setUniformMatrix location $ multiply proj cam
 
     timeVar <- liftIO $ newIORef 0
     let ms = SecondScene {
@@ -73,7 +72,7 @@ drawSecondScene ms = do
     liftIO $ setUniformMatrix (ms^.ubo) $
         multiply (ms^.proj) $
         multiply (ms^.cam) $
-        multiply (rotate t [1, 1, 0]) $ 
+        multiply (rotate t [1, 1, 1]) $ 
         scale 0.1
         
     liftIO $ drawModel $ unwrap (ms^.model)
