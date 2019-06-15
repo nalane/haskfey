@@ -1,3 +1,6 @@
+{- |Contains functions for loading and unloading resources
+-}
+
 module FeyState.ResourceHandler (
     Resource(..), unwrap,
     loadShader, unloadShader,
@@ -14,11 +17,13 @@ import Data.List
 import Data.Maybe
 import qualified Data.Map as M
 
+-- |A wrapper for resources containing the key and the resource itself
 data Resource a = Resource String a
 
 resKey :: Resource a -> String
 resKey (Resource k _) = k
 
+-- |Unwraps a resource from the Resource data type
 unwrap :: Resource a -> a
 unwrap (Resource _ v) = v
 

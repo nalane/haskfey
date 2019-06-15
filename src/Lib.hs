@@ -1,3 +1,7 @@
+{- |This module exposes all functions
+necessary to create a game in the Haskell Fey engine.
+-}
+
 module Lib (
     module FeyState,
     module Graphics,

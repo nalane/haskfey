@@ -1,5 +1,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 
+{- |Contains functions for creating and interacting with models
+-}
+
 module Resources.Model (
     Model, createModel, drawModel, destroyModel
 ) where
@@ -25,6 +28,7 @@ data Material = Material (Vertex3 GLfloat) (Vertex3 GLfloat) Int
 defaultMaterial :: Material
 defaultMaterial = Material (Vertex3 0.8 0.8 0.8) (Vertex3 0.8 0.8 0.8) 1
 
+-- |Contains the data for drawing a model to the screen
 data Model = Model {
     _vao :: VertexArrayObject,
     _vbo :: BufferObject,
@@ -82,21 +86,21 @@ helper p = do
         return res)
 
 parser :: Parser (
-    V.Vector Material, 
+    [Material], 
     V.Vector (Vertex3 GLfloat),
     V.Vector String,
     V.Vector (Vertex2 GLfloat),
-    V.Vector (Int, Int))
+    [(Int, Int)])
 parser = do
-    m <- V.fromList <$> helper materialParser
+    m <- helper materialParser
     v <- V.fromList <$> helper vertex3Parser
     t <- V.fromList <$> helper textureParser
     u <- V.fromList <$> helper uvParser
-    a <- V.fromList <$> helper mapParser
+    a <- helper mapParser
     return (m, v, t, u, a)
 
 
-
+-- |Read the model at the given path into memory.
 createModel :: FilePath -> IO Model
 createModel path = do
     let fromEither (Right a) = a
@@ -104,20 +108,26 @@ createModel path = do
     
     (mats, verts, _, _, mapping) <- fromEither <$> parseFromFile parser path
 
-    let v = V.map (\(index,_) -> verts ! index) mapping
-    let m = replicate (length v) (diffuse $ V.head $ V.snoc mats defaultMaterial)
+    let mat =
+            case mats of
+                [] -> defaultMaterial
+                _ -> head mats
+    let v = map ((!) verts . fst) mapping
+    let m = replicate (length v) $ diffuse mat
  
     vertexArray <- createVertexArray
-    vertexBuffer <- createBuffer 0 3 $ V.toList v
+    vertexBuffer <- createBuffer 0 3 v
     colorBuffer <- createBuffer 1 3 m
 
-    return $ Model vertexArray vertexBuffer colorBuffer (length v)
+    return $ Model vertexArray vertexBuffer colorBuffer $ length v
 
+-- |Draw the given model to the screen
 drawModel :: Model -> IO ()
 drawModel m = do
     activateVertexArray (m^.vao)
     drawTriangles $ toEnum (m^.buffLength)
 
+-- |Remove the given model from memory
 destroyModel :: Model -> IO ()
 destroyModel m = do
     deleteObjectNames [m^.vbo, m^.cbo]

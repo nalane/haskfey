@@ -1,3 +1,6 @@
+{- |Contains functions for interacting with the log
+-}
+
 module FeyState.Logging (
     recordLog, endLogging
 ) where

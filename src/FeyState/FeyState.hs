@@ -1,3 +1,6 @@
+{- |Contains the functions for using the FeyState monad
+-}
+
 module FeyState.FeyState (
     FeyState(..), fmap, pure, (<*>), (>>), (>>=), return, liftIO,
     getStateVar, setStateVar,
@@ -10,9 +13,12 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Lens
 
+-- |The FeyState monad itself
 newtype FeyState a = FeyState (State -> IO (State, a))
 
 instance Functor FeyState where
+    -- |Given a function and a monadic value,
+    -- |take the value and apply it to the function
     fmap f (FeyState s) = FeyState (\state -> do
         (newState, val) <- s state
         return (newState, f val))

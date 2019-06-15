@@ -37,6 +37,7 @@ data State = State {
 
 makeLenses ''State
 
+-- |Given a path to write the log to, create a new state for the Fey monad
 newState :: String -> IO State
 newState path = do
     fh <- openFile path WriteMode

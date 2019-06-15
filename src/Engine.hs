@@ -22,6 +22,7 @@ import Data.IORef
 import Data.StateVar
 import qualified Data.Map as M
 
+-- |Determines if the given key is in a pressed state or not
 isKeyPressed :: GLFW.Key -> FeyState Bool
 isKeyPressed k = do
     keyMap <- getStateVar keyState >>= (liftIO . readMVar)
