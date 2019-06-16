@@ -15,13 +15,11 @@ import Control.Monad
 -- |Writes to the log
 recordLog :: String -> FeyState ()
 recordLog msg = do
-    maybeFile <- getStateVar logFile
-    liftIO $ forM_ maybeFile $ flip hPutStrLn msg
+    file <- getStateVar logFile
+    liftIO $ hPutStrLn file msg
 
 -- |Terminates the logging system
 endLogging :: FeyState ()
 endLogging = do
-    maybeFile <- getStateVar logFile
-    liftIO $ forM_ maybeFile hClose
-    setStateVar logPath Nothing 
-    setStateVar logFile Nothing
+    file <- getStateVar logFile
+    liftIO $ hClose file

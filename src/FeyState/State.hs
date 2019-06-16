@@ -4,30 +4,34 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module FeyState.State (
-    State(..), logPath, logFile, window, width, height, keyState, shaders, models,
+    State(..), config, logFile, window, keyState, shaders, models,
     newState
 ) where
 
 import Resources
 
+import FeyState.Config
+
 import Data.Maybe
 import Data.Map
+import Data.Bool
 
 import System.IO
-import Control.Lens
+import Control.Lens (makeLenses, (^.))
 import Control.Concurrent.MVar
 
 import Graphics.UI.GLFW as GLFW
 import Graphics.Rendering.OpenGL
 
+import Text.Parsec (spaces, many, noneOf)
+import Text.Parsec.ByteString
+import Text.Parsec.Number
+
 -- |Persistent state of the engine
 data State = State {
-    _logPath :: Maybe String,
-    _logFile :: Maybe Handle,
+    _config :: Config,
+    _logFile :: Handle,
     _window :: Maybe GLFW.Window,
-    _width :: Maybe Int,
-    _height :: Maybe Int,
-
     _keyState :: MVar (Map GLFW.Key Bool),
 
     --Resources
@@ -37,9 +41,11 @@ data State = State {
 
 makeLenses ''State
 
--- |Given a path to write the log to, create a new state for the Fey monad
+-- |Given a path to a config file, create a new state for the Fey monad
 newState :: String -> IO State
 newState path = do
-    fh <- openFile path WriteMode
+    cfg <- loadConfig path
+    
+    fh <- openFile "log.txt" WriteMode
     k <- newMVar empty
-    return $ State (Just path) (Just fh) Nothing Nothing Nothing k empty empty
+    return $ State cfg fh Nothing k empty empty

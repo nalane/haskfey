@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dbb59f276aefd0d64edf69cdf5335d0a6051504317a058f6133b1b2af2850cb2
+-- hash: 2cbb3ca796eeca66a565e246cc2ba9f6c91e2d38010179da358ee587750b52c6
 
 name:           haskfey
 version:        0.1.0.0
@@ -29,6 +29,7 @@ library
   exposed-modules:
       Engine
       FeyState
+      FeyState.Config
       FeyState.FeyState
       FeyState.Logging
       FeyState.ResourceHandler

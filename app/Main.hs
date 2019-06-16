@@ -16,4 +16,4 @@ mainGameMonad = do
 main :: IO ()
 main = --do
     --forkServer (pack "localhost") 8000
-    runFeyState "log.txt" mainGameMonad
+    runFeyState "feyData/fey.cfg" mainGameMonad

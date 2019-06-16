@@ -36,8 +36,8 @@ initScene = do
 
     m <- loadModel "feyData/library/monkey.fey.model"
 
-    w <- fromJust <$> getStateVar width
-    h <- fromJust <$> getStateVar height
+    w <- getStateVar (config.width)
+    h <- getStateVar (config.height)
     let cam = camera [0, 0, 0.5] [0, 0, 0] [0, 1, 0]
     let proj = orthographic w h
     location <- liftIO $ getUniformLocation (unwrap shaderProg) "mvpMatrix"
