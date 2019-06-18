@@ -35,11 +35,10 @@ isKeyPressed k = do
 -- |Initializes the game engine and sets the window width and height
 initGame :: FeyState ()
 initGame = do
-    w <- getStateVar (config.width)
-    h <- getStateVar (config.height)
+    cfg <- getStateVar config
     k <- getStateVar keyState
 
-    win <- liftIO $ initGLFW w h k
+    win <- liftIO $ initGLFW cfg k
     setStateVar window (Just win)
 
     liftIO initOpenGL

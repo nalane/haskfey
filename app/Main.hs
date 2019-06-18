@@ -1,7 +1,8 @@
 module Main where
 
 import System.Remote.Monitoring
-import Data.ByteString.Char8
+import System.Environment
+import Data.ByteString.Char8 (pack)
 
 import Lib
 import Scenes
@@ -14,6 +15,11 @@ mainGameMonad = do
     endLogging
 
 main :: IO ()
-main = --do
+main = do
     --forkServer (pack "localhost") 8000
-    runFeyState "feyData/fey.cfg" mainGameMonad
+    args <- getArgs
+    cfg <- case args of
+        [] -> return "feyData/fey.cfg"
+        _ -> return $ head args
+
+    runFeyState cfg mainGameMonad
