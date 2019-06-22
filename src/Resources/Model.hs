@@ -4,7 +4,8 @@
 -}
 
 module Resources.Model (
-    Model, createModel, drawModel, destroyModel
+    Model, texturePaths,
+    createModel, drawModel, destroyModel
 ) where
 
 import Graphics.Rendering.OpenGL
@@ -33,7 +34,8 @@ data Model = Model {
     _vao :: VertexArrayObject,
     _vbo :: BufferObject,
     _cbo :: BufferObject,
-    _buffLength :: Int
+    _buffLength :: Int,
+    _texturePaths :: [String]
 }
 
 makeLenses ''Model
@@ -88,13 +90,13 @@ helper p = do
 parser :: Parser (
     [Material], 
     V.Vector (Vertex3 GLfloat),
-    V.Vector String,
+    [String],
     V.Vector (Vertex2 GLfloat),
     [(Int, Int)])
 parser = do
     m <- helper materialParser
     v <- V.fromList <$> helper vertex3Parser
-    t <- V.fromList <$> helper textureParser
+    t <- helper textureParser
     u <- V.fromList <$> helper uvParser
     a <- helper mapParser
     return (m, v, t, u, a)
@@ -106,7 +108,7 @@ createModel path = do
     let fromEither (Right a) = a
     let diffuse (Material d _ _) = d
     
-    (mats, verts, _, _, mapping) <- fromEither <$> parseFromFile parser path
+    (mats, verts, texts, _, mapping) <- fromEither <$> parseFromFile parser path
 
     let mat =
             case mats of
@@ -119,7 +121,7 @@ createModel path = do
     vertexBuffer <- createBuffer 0 3 v
     colorBuffer <- createBuffer 1 3 m
 
-    return $ Model vertexArray vertexBuffer colorBuffer $ length v
+    return $ Model vertexArray vertexBuffer colorBuffer (length v) texts
 
 -- |Draw the given model to the screen
 drawModel :: Model -> IO ()

@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module FeyState.State (
-    State(..), config, logFile, window, keyState, shaders, models,
+    State(..), config, logFile, window, keyState, shaders, models, textures,
     newState
 ) where
 
@@ -36,7 +36,8 @@ data State = State {
 
     --Resources
     _shaders :: Map String (Program, Int),
-    _models :: Map String (Model, Int)
+    _models :: Map String (Model, Int),
+    _textures :: Map String (Texture, Int)
 }
 
 makeLenses ''State
@@ -48,4 +49,4 @@ newState path = do
     
     fh <- openFile "log.txt" WriteMode
     k <- newMVar empty
-    return $ State cfg fh Nothing k empty empty
+    return $ State cfg fh Nothing k empty empty empty

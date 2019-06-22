@@ -48,12 +48,12 @@ instance MonadIO FeyState where
         return (state, val))
 
 -- |Returns the value referred to by the Lens
-getStateVar :: Getting a State a -> FeyState a
-getStateVar getter = FeyState (\state -> return (state, state^.getter))
+getStateVar :: ALens' State a -> FeyState a
+getStateVar getter = FeyState (\state -> return (state, state^#getter))
 
 -- |Set the state value referred to by the given Lens
-setStateVar :: ASetter State State a b -> b -> FeyState ()
-setStateVar setter val = FeyState (\state -> return (set setter val state, ()))
+setStateVar :: ALens' State a -> a -> FeyState ()
+setStateVar setter val = FeyState (\state -> return (storing setter val state, ()))
 
 -- |Runs the FeyState and pushes it into the IO monad
 runFeyState :: String -> FeyState a -> IO a

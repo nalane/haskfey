@@ -32,6 +32,7 @@ dependencies:
 - parsec
 - parsec3-numbers
 - vector
+- JuicyPixels
 
 library:
   source-dirs: src

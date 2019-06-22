@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2cbb3ca796eeca66a565e246cc2ba9f6c91e2d38010179da358ee587750b52c6
+-- hash: 9a23356a45c66a66d0d400c160255e1b7be969804008438d2ef4ab8d468c1550
 
 name:           haskfey
 version:        0.1.0.0
@@ -42,6 +42,7 @@ library
       Resources
       Resources.Model
       Resources.Shaders
+      Resources.Texture
       Scene
   other-modules:
       Paths_haskfey
@@ -49,6 +50,7 @@ library
       src
   build-depends:
       GLFW-b
+    , JuicyPixels
     , OpenGL
     , StateVar
     , base >=4.7 && <5
@@ -74,6 +76,7 @@ executable haskfey-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-T
   build-depends:
       GLFW-b
+    , JuicyPixels
     , OpenGL
     , StateVar
     , base >=4.7 && <5
@@ -98,6 +101,7 @@ test-suite haskfey-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       GLFW-b
+    , JuicyPixels
     , OpenGL
     , StateVar
     , base >=4.7 && <5
