@@ -18,6 +18,7 @@ createTexture path = do
         fromEither <$>
         readImage path
 
+    GL.activeTexture $= GL.TextureUnit 1
     texObj <- GL.genObjectName
     GL.textureBinding GL.Texture2D $= Just texObj
 
@@ -27,13 +28,15 @@ createTexture path = do
     unsafeWith d $ \ptr ->
         GL.texImage2D GL.Texture2D GL.NoProxy 0 GL.RGBA8 (GL.TextureSize2D w h) 0 $
         GL.PixelData GL.RGBA GL.UnsignedByte ptr
+    --GL.texture GL.Texture2D $= GL.Enabled
 
     return $ Texture texObj
 
 drawTexture :: Texture -> IO ()
 drawTexture (Texture texObj) = do
-    GL.activeTexture $= GL.TextureUnit 0
+    GL.activeTexture $= GL.TextureUnit 1
     GL.textureBinding GL.Texture2D $= Just texObj
+    --GL.texture GL.Texture2D $= GL.Enabled
 
 destroyTexture :: Texture -> IO ()
 destroyTexture (Texture texObj) =

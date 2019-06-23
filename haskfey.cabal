@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9a23356a45c66a66d0d400c160255e1b7be969804008438d2ef4ab8d468c1550
+-- hash: 9ff3bafc3c6dd9f609101d99ab843b6c84d5dda35d1b4dccd9fc449802d9f459
 
 name:           haskfey
 version:        0.1.0.0
@@ -39,6 +39,7 @@ library
       Graphics.Initialization
       Lib
       Matrix
+      Object
       Resources
       Resources.Model
       Resources.Shaders
@@ -67,6 +68,7 @@ library
 executable haskfey-exe
   main-is: Main.hs
   other-modules:
+      Objects.Suzanne
       Scenes
       Scenes.MainScene
       Scenes.SecondScene

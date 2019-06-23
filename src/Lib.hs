@@ -8,7 +8,8 @@ module Lib (
     module Engine,
     module Scene,
     module Matrix,
-    module Resources
+    module Resources,
+    module Object
 ) where
 
 import FeyState
@@ -17,3 +18,4 @@ import Engine
 import Scene
 import Matrix
 import Resources
+import Object

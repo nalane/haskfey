@@ -34,6 +34,7 @@ data Model = Model {
     _vao :: VertexArrayObject,
     _vbo :: BufferObject,
     _cbo :: BufferObject,
+    _uvbo :: BufferObject,
     _buffLength :: Int,
     _texturePaths :: [String]
 }
@@ -108,20 +109,22 @@ createModel path = do
     let fromEither (Right a) = a
     let diffuse (Material d _ _) = d
     
-    (mats, verts, texts, _, mapping) <- fromEither <$> parseFromFile parser path
+    (mats, verts, texts, uvs, mapping) <- fromEither <$> parseFromFile parser path
 
     let mat =
             case mats of
                 [] -> defaultMaterial
                 _ -> head mats
     let v = map ((!) verts . fst) mapping
+    let u = map ((!) uvs . snd) mapping
     let m = replicate (length v) $ diffuse mat
  
     vertexArray <- createVertexArray
     vertexBuffer <- createBuffer 0 3 v
     colorBuffer <- createBuffer 1 3 m
+    uvBuffer <- createBuffer 2 2 u
 
-    return $ Model vertexArray vertexBuffer colorBuffer (length v) texts
+    return $ Model vertexArray vertexBuffer colorBuffer uvBuffer (length v) texts
 
 -- |Draw the given model to the screen
 drawModel :: Model -> IO ()

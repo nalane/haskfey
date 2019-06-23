@@ -16,40 +16,28 @@ import Data.StateVar
 import Control.Monad
 import Control.Lens (makeLenses, (^.))
 
+import Objects.Suzanne
+
 data MainScene = MainScene {
-    _prog :: Resource Program,
-    _model :: Resource Model,
-    _ubo :: UniformLocation,
-    _time :: IORef Float,
     _cam :: FeyMatrix,
-    _proj :: FeyMatrix
+    _proj :: FeyMatrix,
+    _suz :: Suzanne
 }
 
 makeLenses ''MainScene
 
 initScene :: FeyState Scene
 initScene = do
-    shaderProg <- loadShader [
-        (FragmentShader, "feyData/shaders/bare/bare.frag"),
-        (VertexShader, "feyData/shaders/bare/bare.vert")]
-    liftIO $ setShader $ unwrap shaderProg
-
-    m <- loadModel "feyData/library/monkey.fey.model"
-
     w <- getStateVar (config.width)
     h <- getStateVar (config.height)
     let cam = camera [0, 0, 0.5] [0, 0, 0] [0, 1, 0]
     let proj = orthographic w h
-    location <- liftIO $ getUniformLocation (unwrap shaderProg) "mvpMatrix"
 
-    timeVar <- liftIO $ newIORef 0
+    s <- load
     let ms = MainScene {
-        _prog = shaderProg,
-        _model = m,
-        _ubo = location,
-        _time = timeVar,
         _cam = cam,
-        _proj = proj }
+        _proj = proj,
+        _suz = s }
     return $ Scene (updateMainScene ms) (drawMainScene ms) (endMainScene ms)
 
 updateMainScene :: MainScene -> FeyState (Maybe String)
@@ -58,7 +46,7 @@ updateMainScene ms = do
     shouldEnd <- isKeyPressed GLFW.Key'Escape
     when shouldEnd $ liftIO $ GLFW.setWindowShouldClose win True
 
-    (ms^.time) $~ (+0.01)
+    update (ms^.suz)
 
     swapScenes <- isKeyPressed GLFW.Key'Space
     if swapScenes
@@ -66,18 +54,7 @@ updateMainScene ms = do
         else return Nothing
 
 drawMainScene :: MainScene -> FeyState ()
-drawMainScene ms = do
-    liftIO $ setShader $ unwrap (ms^.prog)
-
-    t <- get (ms^.time)
-    liftIO $ setUniformMatrix (ms^.ubo) $
-        multiply (ms^.proj) $
-        multiply (ms^.cam) $
-        rotate t [0, 0, 1]
-        
-    liftIO $ drawModel $ unwrap (ms^.model)
+drawMainScene ms = draw (ms^.suz) $ multiply (ms^.proj) (ms^.cam) 
 
 endMainScene :: MainScene -> FeyState ()
-endMainScene ms = do
-    unloadShader (ms^.prog)
-    unloadModel (ms^.model)
+endMainScene ms = unload (ms^.suz)

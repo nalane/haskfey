@@ -55,11 +55,11 @@ runGame sceneMap sceneId = do
         scene <- get sceneRef
 
         liftIO GLFW.pollEvents
-        updateResult <- scene^.update
+        updateResult <- scene^.updateScene
         case updateResult of
             Nothing -> do
                 liftIO $ GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-                scene^.draw
+                scene^.drawScene
     
                 liftIO $ GLFW.swapBuffers win
             Just newId -> do
