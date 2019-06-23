@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Objects.Suzanne (
-    Suzanne, load, update, draw, unload
+module Objects.CubeDude (
+    CubeDude, load, update, draw, unload
 ) where
 
 import Lib
@@ -10,7 +10,7 @@ import Data.StateVar
 import Control.Lens
 import qualified Graphics.Rendering.OpenGL as GL
 
-data Suzanne = Suzanne {
+data CubeDude = CubeDude {
     _prog :: Resource Program,
     _model :: Resource Model,
     _texture :: Resource Texture,
@@ -18,16 +18,16 @@ data Suzanne = Suzanne {
     _time :: IORef Float
 }
 
-makeLenses ''Suzanne
+makeLenses ''CubeDude
 
-instance Object Suzanne where
+instance Object CubeDude where
     load = do
         shd <- loadShader [
             (FragmentShader, "feyData/shaders/bare/bare.frag"),
             (VertexShader, "feyData/shaders/bare/bare.vert")]
         liftIO $ setShader $ unwrap shd
 
-        mod <- loadModel "feyData/library/monkey.fey.model"
+        mod <- loadModel "feyData/library/cube.fey.model"
         tex <- loadTexture ("feyData/library/" ++ head (unwrap mod ^. texturePaths))
 
         uni <- liftIO $ getUniformLocation (unwrap shd) "mvpMatrix"
@@ -36,7 +36,7 @@ instance Object Suzanne where
 
         tim <- liftIO $ newIORef 0
 
-        return $ Suzanne shd mod tex uni tim
+        return $ CubeDude shd mod tex uni tim
 
     update s = (s^.time) $~ (+0.01)
 
@@ -46,8 +46,7 @@ instance Object Suzanne where
         t <- get (s^.time)
         liftIO $ setUniformMatrix (s^.ubo) $
             multiply cam $
-            multiply (rotate t [0, 1, 0]) $
-            multiply (rotate (-90) [1, 0, 0]) $
+            multiply (rotate t [1, 1, 1]) $
             scale 0.25
         
         liftIO $ drawTexture $ unwrap (s^.texture)

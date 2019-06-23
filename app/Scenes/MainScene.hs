@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module Scenes.MainScene (
-    MainScene(..), initScene
+    MainScene, initScene
 ) where
 
 import Lib
@@ -34,10 +34,7 @@ initScene = do
     let proj = orthographic w h
 
     s <- load
-    let ms = MainScene {
-        _cam = cam,
-        _proj = proj,
-        _suz = s }
+    let ms = MainScene cam proj s
     return $ Scene (updateMainScene ms) (drawMainScene ms) (endMainScene ms)
 
 updateMainScene :: MainScene -> FeyState (Maybe String)
