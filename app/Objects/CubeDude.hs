@@ -32,7 +32,7 @@ instance Object CubeDude where
 
         uni <- liftIO $ getUniformLocation (unwrap shd) "mvpMatrix"
         texLocation <- liftIO $ getUniformLocation (unwrap shd) "texSampler"
-        GL.uniform texLocation $= GL.TextureUnit 1
+        GL.uniform texLocation $= GL.TextureUnit 0
 
         tim <- liftIO $ newIORef 0
 

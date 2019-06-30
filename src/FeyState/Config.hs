@@ -38,8 +38,8 @@ parseConfigFile = do
     w <- numHelper
     h <- numHelper
     aa <- numHelper
-    cursor <- toEnum <$> numHelper :: Parser Bool
-    full <- toEnum <$> numHelper :: Parser Bool
+    cursor <- toEnum <$> numHelper
+    full <- toEnum <$> numHelper
     title <- stringHelper
     dPath <- stringHelper
     lPath <- stringHelper

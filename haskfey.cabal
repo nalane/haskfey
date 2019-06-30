@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 76f404565e475805b78ce1e60f48ba532543146935edbe829d03b25896699925
+-- hash: 6dd8f2cc982b2bdec7865b580f12836c8ff6db86cec0088560d9215dd3c508f8
 
 name:           haskfey
 version:        0.1.0.0
@@ -36,6 +36,7 @@ library
       FeyState.State
       Graphics
       Graphics.Buffers
+      Graphics.Drawing
       Graphics.Initialization
       Lib
       Matrix

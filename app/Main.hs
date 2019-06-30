@@ -22,4 +22,4 @@ main = do
         [] -> return "feyData/fey.cfg"
         _ -> return $ head args
 
-    runFeyState cfg mainGameMonad
+    newState cfg >>= flip runFeyState mainGameMonad

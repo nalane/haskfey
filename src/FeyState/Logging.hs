@@ -10,8 +10,6 @@ import FeyState.State
 
 import System.IO
 
-import Control.Monad
-
 -- |Writes to the log
 recordLog :: String -> FeyState ()
 recordLog msg = do

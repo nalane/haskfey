@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module FeyState.State (
-    State(..), config, logFile, window, keyState, shaders, models, textures,
+    State, config, logFile, window, keyState, shaders, models, textures,
     newState
 ) where
 
@@ -14,18 +14,12 @@ import FeyState.Config
 
 import Data.Maybe
 import Data.Map
-import Data.Bool
 
 import System.IO
-import Control.Lens (makeLenses, (^.))
+import Control.Lens (makeLenses)
 import Control.Concurrent.MVar
 
 import Graphics.UI.GLFW as GLFW
-import Graphics.Rendering.OpenGL
-
-import Text.Parsec (spaces, many, noneOf)
-import Text.Parsec.ByteString
-import Text.Parsec.Number
 
 -- |Persistent state of the engine
 data State = State {

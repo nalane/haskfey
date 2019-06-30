@@ -56,8 +56,7 @@ setStateVar :: ALens' State a -> a -> FeyState ()
 setStateVar setter val = FeyState (\state -> return (storing setter val state, ()))
 
 -- |Runs the FeyState and pushes it into the IO monad
-runFeyState :: String -> FeyState a -> IO a
-runFeyState path (FeyState f) = do
-    state <- newState path
+runFeyState :: State -> FeyState a -> IO a
+runFeyState state (FeyState f) = do
     (_, res) <- f state
     return res

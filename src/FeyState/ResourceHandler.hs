@@ -2,7 +2,7 @@
 -}
 
 module FeyState.ResourceHandler (
-    Resource(..), unwrap,
+    Resource, unwrap,
     loadShader, unloadShader,
     loadModel, unloadModel,
     loadTexture, unloadTexture

@@ -5,7 +5,7 @@ module Graphics.Buffers (
     createBuffer, createVertexArray, activateVertexArray,
     getUniformLocation, setUniformMatrix,
     deleteObjectName, deleteObjectNames,
-    VertexArrayObject(..), BufferObject(..), UniformLocation(..)
+    VertexArrayObject, BufferObject, UniformLocation
 ) where
 
 import Matrix

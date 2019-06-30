@@ -18,7 +18,7 @@ createTexture path = do
         fromEither <$>
         readImage path
 
-    GL.activeTexture $= GL.TextureUnit 1
+    GL.activeTexture $= GL.TextureUnit 0
     texObj <- GL.genObjectName
     GL.textureBinding GL.Texture2D $= Just texObj
 
@@ -37,7 +37,7 @@ createTexture path = do
 
 drawTexture :: Texture -> IO ()
 drawTexture (Texture texObj) = do
-    GL.activeTexture $= GL.TextureUnit 1
+    GL.activeTexture $= GL.TextureUnit 0
     GL.textureBinding GL.Texture2D $= Just texObj
 
 destroyTexture :: Texture -> IO ()

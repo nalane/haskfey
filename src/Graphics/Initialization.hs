@@ -39,8 +39,7 @@ initGLFW cfg keyMap = do
         if cfg^.fullScreen
         then do
             m <- fromJust <$> GLFW.getPrimaryMonitor
-            mode <- fromJust <$> GLFW.getVideoMode m
-            let (VideoMode w h _ _ _ _) = mode
+            (VideoMode w h _ _ _ _) <- fromJust <$> GLFW.getVideoMode m
             return (Just m, w, h)
         else return (Nothing, cfg^.width, cfg^.height)
 

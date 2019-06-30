@@ -14,8 +14,8 @@ import Graphics
 import System.IO
 
 import Data.Either
-import qualified Data.Vector as V
 import Data.Vector ((!))
+import qualified Data.Vector as V
 
 import Control.Lens (makeLenses, (^.))
 import Control.Monad
