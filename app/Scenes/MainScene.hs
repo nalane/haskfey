@@ -9,10 +9,6 @@ import Lib
 import Graphics.UI.GLFW as GLFW
 
 import Data.Maybe
-import Data.Word
-import Data.IORef
-import Data.StateVar
-
 import Control.Monad
 import Control.Lens (makeLenses, (^.))
 
