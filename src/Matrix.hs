@@ -2,7 +2,7 @@
 -}
 
 module Matrix (
-    FeyMatrix(..), identity, translate, scale, rotate,
+    Vec3, FeyMatrix(..), identity, translate, scale, rotate,
     camera, orthographic,
     multiply, dot, sub, cross, normalize
 ) where

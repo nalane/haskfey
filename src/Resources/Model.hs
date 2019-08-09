@@ -111,10 +111,7 @@ createModel path = do
     
     (mats, verts, texts, uvs, mapping) <- fromEither <$> parseFromFile parser path
 
-    let mat =
-            case mats of
-                [] -> defaultMaterial
-                _ -> head mats
+    let mat = if null mats then defaultMaterial else head mats
     let v = map ((!) verts . fst) mapping
     let u = map ((!) uvs . snd) mapping
     let m = replicate (length v) $ diffuse mat

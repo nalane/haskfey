@@ -9,7 +9,8 @@ module Lib (
     module Scene,
     module Matrix,
     module Resources,
-    module Object
+    module Object,
+    module Fixtures
 ) where
 
 import FeyState
@@ -19,3 +20,4 @@ import Scene
 import Matrix
 import Resources
 import Object
+import Fixtures

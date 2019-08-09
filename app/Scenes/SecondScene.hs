@@ -18,8 +18,7 @@ import Control.Lens
 import Objects.CubeDude
 
 data SecondScene = SecondScene {
-    _cam :: FeyMatrix,
-    _proj :: FeyMatrix,
+    _cam :: Camera,
     _cube :: CubeDude
 }
 
@@ -27,13 +26,10 @@ makeLenses ''SecondScene
 
 initScene :: FeyState Scene
 initScene = do
-    w <- getStateVar (config.width)
-    h <- getStateVar (config.height)
-    let cam = camera [0, 0, 0.5] [0, 0, 0] [0, 1, 0]
-    let proj = orthographic w h
-
+    cam <- newCamera [0, 0, 0.5] [0, 0, 0] [0, 1, 0]
     c <- load
-    let ms = SecondScene cam proj c
+
+    let ms = SecondScene cam c
     return $ Scene (updateSecondScene ms) (drawSecondScene ms) (endSecondScene ms)
 
 updateSecondScene :: SecondScene -> FeyState (Maybe String)
@@ -50,7 +46,7 @@ updateSecondScene ms = do
         else return Nothing
 
 drawSecondScene :: SecondScene -> FeyState ()
-drawSecondScene ms = draw (ms^.cube) $ multiply (ms^.proj) (ms^.cam) 
+drawSecondScene ms = draw (ms^.cube) $ getCameraMatrix (ms^.cam) 
 
 endSecondScene :: SecondScene -> FeyState ()
 endSecondScene ms = unload (ms^.cube)
