@@ -71,17 +71,17 @@ camera pos lookAt upVector = [
     [0, 0, 0, 1]] where
         forward = normalize $ sub pos lookAt
         left = normalize $ cross upVector forward
-        normUp = cross forward left
+        normUp = normalize $ cross forward left
         (fx:fy:fz:_) = forward
         (lx:ly:lz:_) = left
         (ux:uy:uz:_) = normUp
 
 -- |Creates an orthographic projection matrix
-orthographic :: Int -> Int -> FeyMatrix
-orthographic width height = [
+orthographic :: Int -> Int -> Float -> Float -> FeyMatrix
+orthographic width height near far = [
     [1/r, 0, 0, 0],
     [0, 1/t, 0, 0],
-    [0, 0, -1, 0],
+    [0, 0, -2/(far - near), -(far + near)/(far - near)],
     [0, 0, 0, 1]] where
         t 
             | width > height = fromIntegral height / fromIntegral width

@@ -14,8 +14,10 @@ newCamera :: Vec3 -> Vec3 -> Vec3 -> FeyState Camera
 newCamera pos target up = do
     w <- getStateVar (config.width)
     h <- getStateVar (config.height)
+    f <- getStateVar (config.far)
+    n <- getStateVar (config.near)
 
-    let proj = orthographic w h
+    let proj = orthographic w h f n
     let cam = camera pos target up
 
     return $ Camera proj cam

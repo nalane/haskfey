@@ -3,7 +3,7 @@
 
 module FeyState.Config (
     GraphicsLib(..), Config,
-    width, height, aaSamples, hideCursor, fullScreen,
+    width, height, far, near, aaSamples, hideCursor, fullScreen,
     windowTitle, dataPath, libraryPath, graphicsLib,
     loadConfig
 ) where
@@ -19,6 +19,8 @@ data GraphicsLib = OpenGL | Vulkan
 data Config = Config {
     _width :: Int,
     _height :: Int,
+    _far :: Float,
+    _near :: Float,
     _aaSamples :: Int,
     _hideCursor :: Bool,
     _fullScreen :: Bool,
@@ -33,10 +35,13 @@ makeLenses ''Config
 parseConfigFile :: Parser Config
 parseConfigFile = do
     let numHelper = spaces >> nat
+    let floatHelper = spaces >> floating
     let stringHelper = spaces >> many (noneOf "\r\n")
 
     w <- numHelper
     h <- numHelper
+    f <- floatHelper
+    n <- floatHelper
     aa <- numHelper
     cursor <- toEnum <$> numHelper
     full <- toEnum <$> numHelper
@@ -47,7 +52,7 @@ parseConfigFile = do
         "g" -> return OpenGL
         _ -> return Vulkan
 
-    return $ Config w h aa cursor full title dPath lPath gLib
+    return $ Config w h f n aa cursor full title dPath lPath gLib
 
 loadConfig :: FilePath -> IO Config
 loadConfig path = do

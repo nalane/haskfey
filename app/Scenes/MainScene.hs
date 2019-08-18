@@ -23,7 +23,7 @@ makeLenses ''MainScene
 
 initScene :: FeyState Scene
 initScene = do
-    cam <- newCamera [0, 0, 0.5] [0, 0, 0] [0, 1, 0]
+    cam <- newCamera [25, 0, 25] [0, 0, 0] [0, 1, 0]
     s <- load
 
     let ms = MainScene cam s

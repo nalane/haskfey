@@ -38,7 +38,7 @@ instance Object Suzanne where
 
         return $ Suzanne shd mod tex uni tim
 
-    update s = (s^.time) $~ (+0.01)
+    update s = (s^.time) $~ (+0.001)
 
     draw s cam = do
         liftIO $ setShader $ unwrap (s^.prog)
@@ -46,10 +46,10 @@ instance Object Suzanne where
         t <- get (s^.time)
         liftIO $ setUniformMatrix (s^.ubo) $
             multiply cam $
-            multiply (rotate t [0, 1, 0]) $
+            multiply (translate [0, 0, t]) $
             multiply (rotate (-90) [1, 0, 0]) $
             scale 0.25
-        
+
         liftIO $ drawTexture $ unwrap (s^.texture)
         liftIO $ drawModel $ unwrap (s^.model)
 
