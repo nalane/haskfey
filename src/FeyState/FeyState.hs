@@ -31,16 +31,10 @@ instance Applicative FeyState where
         return (finalState, f val))
 
 instance Monad FeyState where
-    (>>) (FeyState lhs) (FeyState rhs) = FeyState (\state -> do
-        (newState, _) <- lhs state
-        rhs newState)
-
     (>>=) (FeyState lhs) f = FeyState (\state -> do
         (newState, val) <- lhs state
         let (FeyState rhs) = f val
         rhs newState)
-
-    return = pure
 
 instance MonadIO FeyState where
     liftIO action = FeyState (\state -> do
