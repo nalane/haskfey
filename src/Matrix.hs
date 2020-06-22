@@ -12,7 +12,7 @@ import Graphics.Rendering.OpenGL (GLfloat)
 type Vec3 = [GLfloat]
 type Vec4 = [GLfloat]
 
--- |Fey implementation of a 4x4 matrix for rendering
+-- |Fey implementation of a row major 4x4 matrix for rendering
 type FeyMatrix = [[GLfloat]]
 
 -- |Simple 4x4 identity matrix

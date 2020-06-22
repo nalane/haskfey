@@ -22,9 +22,8 @@ createBuffer location stride vals = do
     buffer <- genObjectName
     bindBuffer ArrayBuffer $= Just buffer
 
-    withArray vals $ \ptr -> do
-        let size = fromIntegral $ length vals * sizeOf (head vals)
-        bufferData ArrayBuffer $= (size, ptr, StaticDraw)
+    let size = fromIntegral $ length vals * sizeOf (head vals)
+    withArray vals $ \ptr -> bufferData ArrayBuffer $= (size, ptr, StaticDraw)
 
     let attribLoc = AttribLocation $ fromIntegral location
     let descriptor = VertexArrayDescriptor (toEnum stride) Float 0 nullPtr
