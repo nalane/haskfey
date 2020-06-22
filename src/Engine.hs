@@ -39,9 +39,11 @@ initGame = do
     k <- getStateVar keyState
 
     win <- liftIO $ initGLFW cfg k
-    setStateVar window (Just win)
+    setStateVar window $ Just win
 
-    liftIO initOpenGL
+    if cfg^.graphicsLib == OpenGL 
+        then liftIO initOpenGL 
+        else liftIO $ initVulkan cfg
 
 -- |The main game loop
 runGame :: (String -> FeyState Scene) -> String -> FeyState ()

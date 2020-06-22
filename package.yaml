@@ -33,6 +33,7 @@ dependencies:
 - parsec3-numbers
 - vector
 - JuicyPixels
+- vulkan
 
 library:
   source-dirs: src

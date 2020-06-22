@@ -14,7 +14,7 @@ import Text.Parsec
 import Text.Parsec.ByteString
 import Text.Parsec.Number
 
-data GraphicsLib = OpenGL | Vulkan
+data GraphicsLib = OpenGL | Vulkan deriving Eq
 
 data Config = Config {
     _width :: Int,
