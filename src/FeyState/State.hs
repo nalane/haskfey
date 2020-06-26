@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module FeyState.State (
-    State, config, logFile, window, keyState, shaders, models, textures,
+    State, config, logFile, window, keyState, shaders, models, textures, gfxIValues, gfxFunctions,
     newState
 ) where
 
@@ -21,6 +21,9 @@ import Control.Concurrent.MVar
 
 import Graphics.UI.GLFW as GLFW
 
+import Graphics.InternalValues
+import Graphics.GraphicsFunctions
+
 -- |Persistent state of the engine
 data State = State {
     _config :: Config,
@@ -31,7 +34,11 @@ data State = State {
     --Resources
     _shaders :: Map String (Program, Int),
     _models :: Map String (Model, Int),
-    _textures :: Map String (Texture, Int)
+    _textures :: Map String (Texture, Int),
+
+    -- Graphics engine internals
+    _gfxIValues :: Maybe InternalValues,
+    _gfxFunctions :: Maybe GraphicsFunctions
 }
 
 makeLenses ''State
@@ -43,4 +50,16 @@ newState path = do
     
     fh <- openFile "log.txt" WriteMode
     k <- newMVar empty
-    return $ State cfg fh Nothing k empty empty empty
+    return $ State {
+        _config = cfg,
+        _logFile = fh,
+        _window = Nothing,
+        _keyState = k,
+
+        _shaders = empty,
+        _models = empty,
+        _textures = empty,
+        
+        _gfxIValues = Nothing,
+        _gfxFunctions = Nothing
+    }

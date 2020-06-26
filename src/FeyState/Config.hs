@@ -14,7 +14,7 @@ import Text.Parsec
 import Text.Parsec.ByteString
 import Text.Parsec.Number
 
-data GraphicsLib = OpenGL | Vulkan deriving Eq
+data GraphicsLib = OGL | VK deriving Eq
 
 data Config = Config {
     _width :: Int,
@@ -49,8 +49,8 @@ parseConfigFile = do
     dPath <- stringHelper
     lPath <- stringHelper
     gLib <- stringHelper >>= \ case
-        "g" -> return OpenGL
-        _ -> return Vulkan
+        "g" -> return OGL
+        _ -> return VK
 
     return $ Config w h f n aa cursor full title dPath lPath gLib
 

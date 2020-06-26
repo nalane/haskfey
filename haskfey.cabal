@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d907a2244dfb9fc8243a06c436f6dfb5ffc95eb8a09ffeefa55abf083989eae1
+-- hash: abdc9d346777b16349b5074160cd46bd01346ed1b12525199c356658a9bc6a9d
 
 name:           haskfey
 version:        0.1.0.0
@@ -39,7 +39,9 @@ library
       Graphics
       Graphics.Buffers
       Graphics.Drawing
+      Graphics.GraphicsFunctions
       Graphics.Initialization
+      Graphics.InternalValues
       Lib
       Matrix
       Object
