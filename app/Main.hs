@@ -10,7 +10,7 @@ import Scenes
 mainGameMonad :: FeyState ()
 mainGameMonad = do
     initGame
-    runGame sceneMapping "main"
+    runGame sceneMapping "second"
     endGame
     endLogging
 
