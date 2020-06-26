@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE LambdaCase #-}
 
-module FeyState.Config (
+module Config (
     GraphicsLib(..), Config,
     width, height, far, near, aaSamples, hideCursor, fullScreen,
     windowTitle, dataPath, libraryPath, graphicsLib,

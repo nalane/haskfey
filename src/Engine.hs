@@ -8,6 +8,7 @@ module Engine (
 import FeyState
 import Graphics
 import Scene
+import Config
 
 import Control.Lens
 import Control.Monad.Loops

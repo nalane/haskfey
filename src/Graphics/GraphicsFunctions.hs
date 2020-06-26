@@ -20,7 +20,7 @@ import qualified Data.Vector as V
 
 import Control.Lens (makeLenses, (^.))
 
-import FeyState.Config
+import Config
 
 import Graphics.Initialization
 import Graphics.InternalValues

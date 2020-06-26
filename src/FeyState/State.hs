@@ -9,8 +9,7 @@ module FeyState.State (
 ) where
 
 import Resources
-
-import FeyState.Config
+import Config
 
 import Data.Maybe
 import Data.Map

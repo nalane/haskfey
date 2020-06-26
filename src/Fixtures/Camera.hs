@@ -4,6 +4,7 @@ module Fixtures.Camera (
 
 import Matrix
 import FeyState
+import Config
 
 data Camera = Camera {
     _projection :: FeyMatrix,

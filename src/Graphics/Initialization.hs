@@ -17,7 +17,7 @@ import Control.Concurrent.MVar
 import Data.Maybe
 import Data.Map
 
-import FeyState.Config
+import Config
 
 -- |Inititalizes GLFW. Returns the GLFW window
 initGLFW :: Config -> MVar (Map GLFW.Key Bool) -> IO GLFW.Window
