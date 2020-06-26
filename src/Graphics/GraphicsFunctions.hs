@@ -21,8 +21,6 @@ import qualified Data.Vector as V
 import Control.Lens (makeLenses, (^.))
 
 import Config
-
-import Graphics.Initialization
 import Graphics.InternalValues
 
 data GraphicsFunctions = GraphicsFunctions {
