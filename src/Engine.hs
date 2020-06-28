@@ -91,6 +91,7 @@ initGame = do
 -- |The main game loop
 runGame :: (String -> FeyState Scene) -> String -> FeyState ()
 runGame sceneMap sceneId = do
+    gLib <- getStateVar (config.graphicsLib)
     win <- fromJust <$> getStateVar window
 
     currScene <- sceneMap sceneId
@@ -106,7 +107,7 @@ runGame sceneMap sceneId = do
                 liftIO $ GL.clear [GL.ColorBuffer, GL.DepthBuffer]
                 scene^.drawScene
     
-                liftIO $ GLFW.swapBuffers win
+                when (gLib == OGL) $ liftIO $ GLFW.swapBuffers win
             Just newId -> do
                 ks <- getStateVar keyState
                 liftIO $ swapMVar ks M.empty
@@ -123,6 +124,10 @@ runGame sceneMap sceneId = do
 -- |Cleans up once the game is finished
 endGame :: FeyState ()
 endGame = do
+    functions <- fromJust <$> getStateVar gfxFunctions
+    iVals <- fromJust <$> getStateVar gfxIValues
+    liftIO $ (functions^.cleanUp) iVals
+
     win <- getStateVar window
     liftIO $ forM_ win GLFW.destroyWindow
     liftIO GLFW.terminate

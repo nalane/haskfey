@@ -1,19 +1,14 @@
 {-| This structure contains the internal config of the graphics engine.
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
-
 module Graphics.InternalValues (
-    InternalValues(..), vkInstance
+    InternalValues(..)
 ) where
 
-import Control.Lens (makeLenses)
-import Graphics.Rendering.OpenGL as GL
 import Vulkan as VK
+import Foreign.Ptr
 
 -- |Persistent state of the engine
-data InternalValues = OpenGL | Vulkan {
-    _vkInstance :: VK.Instance
-}
-
-makeLenses ''InternalValues
+data InternalValues = 
+    OpenGL | 
+    Vulkan VK.Instance (FunPtr VK.FN_vkDebugUtilsMessengerCallbackEXT) (Maybe VK.DebugUtilsMessengerEXT)
