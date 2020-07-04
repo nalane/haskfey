@@ -36,7 +36,8 @@ unwrap (Resource _ v) = v
 shaderKey :: [(ShaderType, FilePath)] -> String
 shaderKey = concatMap snd . sortBy (flip compare `on` fst)
 
-loadResource :: ALens' State (M.Map String (a, Int)) ->
+loadResource :: 
+    ALens' (State FeyState) (M.Map String (a, Int)) ->
     String -> String ->
     IO a -> FeyState (Resource a)
 loadResource mapLens key resName creator = do
@@ -54,7 +55,8 @@ loadResource mapLens key resName creator = do
             setStateVar mapLens $ M.insert key (res, 1) resMap
             return $ Resource key res
 
-unloadResource :: ALens' State (M.Map String (a, Int)) ->
+unloadResource :: 
+    ALens' (State FeyState) (M.Map String (a, Int)) ->
     String -> String ->
     (a -> IO ()) -> FeyState ()
 unloadResource mapLens key resName destructor = do

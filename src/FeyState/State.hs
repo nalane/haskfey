@@ -17,6 +17,7 @@ import Data.Map
 import System.IO
 import Control.Lens (makeLenses)
 import Control.Concurrent.MVar
+import Control.Monad.IO.Class
 
 import Graphics.UI.GLFW as GLFW
 
@@ -24,7 +25,7 @@ import Graphics.InternalValues
 import Graphics.GraphicsFunctions
 
 -- |Persistent state of the engine
-data State = State {
+data State m = State {
     _config :: Config,
     _logFile :: Handle,
     _window :: Maybe GLFW.Window,
@@ -37,13 +38,13 @@ data State = State {
 
     -- Graphics engine internals
     _gfxIValues :: Maybe InternalValues,
-    _gfxFunctions :: Maybe GraphicsFunctions
+    _gfxFunctions :: Maybe (GraphicsFunctions m)
 }
 
 makeLenses ''State
 
 -- |Given a path to a config file, create a new state for the Fey monad
-newState :: String -> IO State
+newState :: MonadIO m => String -> IO (State m)
 newState path = do
     cfg <- loadConfig path
     

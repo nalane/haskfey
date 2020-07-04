@@ -56,8 +56,10 @@ initGLFW cfg keyMap = do
 
     win <- fromJust <$> GLFW.createWindow w h title monitor Nothing
 
-    GLFW.makeContextCurrent $ Just win
-    GLFW.swapInterval 1
+    when (graphics == OGL) $ do
+        GLFW.makeContextCurrent $ Just win
+        GLFW.swapInterval 1
+        
     GLFW.setKeyCallback win $ Just (\_ k _ s _ ->
         modifyMVar_ keyMap $ return . M.insert k (s == GLFW.KeyState'Pressed))
     when (cfg^.hideCursor) $ GLFW.setCursorInputMode win GLFW.CursorInputMode'Disabled
@@ -85,7 +87,7 @@ initGame = do
 
     let funcs = getFunctions cfg
     setStateVar gfxFunctions $ Just funcs
-    iVals <- liftIO (funcs^.initialize)
+    iVals <- funcs^.initialize
     setStateVar gfxIValues $ Just iVals
 
 -- |The main game loop
@@ -126,7 +128,7 @@ endGame :: FeyState ()
 endGame = do
     functions <- fromJust <$> getStateVar gfxFunctions
     iVals <- fromJust <$> getStateVar gfxIValues
-    liftIO $ (functions^.cleanUp) iVals
+    (functions^.cleanUp) iVals
 
     win <- getStateVar window
     liftIO $ forM_ win GLFW.destroyWindow

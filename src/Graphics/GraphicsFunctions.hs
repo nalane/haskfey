@@ -12,8 +12,10 @@ module Graphics.GraphicsFunctions (
 import qualified Graphics.UI.GLFW as GLFW
 import qualified Graphics.Rendering.OpenGL as GL
 import Graphics.Rendering.OpenGL (($=))
+
 import qualified Vulkan as VK
 import Vulkan.Exception
+import Vulkan.CStruct.Extends
 
 import Foreign.Ptr
 import Foreign.C.String
@@ -27,20 +29,21 @@ import Data.Maybe
 import Control.Lens (makeLenses, (^.))
 import Control.Exception
 import Control.Monad
+import Control.Monad.IO.Class
 
 import System.IO
 
 import Config
 import Graphics.InternalValues
 
-data GraphicsFunctions = GraphicsFunctions {
-    _initialize :: IO InternalValues,
-    _cleanUp :: InternalValues -> IO ()
+data GraphicsFunctions m = GraphicsFunctions {
+    _initialize :: m InternalValues,
+    _cleanUp :: InternalValues -> m ()
 }
 
 makeLenses ''GraphicsFunctions
 
-getFunctions :: Config -> GraphicsFunctions
+getFunctions :: MonadIO m => Config -> GraphicsFunctions m
 getFunctions cfg =
     let lib = cfg^.graphicsLib
     in case lib of
@@ -58,7 +61,7 @@ getFunctions cfg =
 
 
 -- |Sets up OpenGL variables that determine how it renders
-glInitialize :: IO InternalValues
+glInitialize :: MonadIO m => m InternalValues
 glInitialize = do
     GL.clearColor $= GL.Color4 0 0 0 1
     GL.depthFunc $= Just GL.Less
@@ -75,7 +78,7 @@ vkRequiredLayers :: [BLU.ByteString]
 vkRequiredLayers = map BLU.pack ["VK_LAYER_KHRONOS_validation"]
 
 -- Create a Vulkan instance
-vkCreateInstance :: Config -> IO VK.Instance
+vkCreateInstance :: MonadIO m => Config -> m VK.Instance
 vkCreateInstance cfg = do
     let appInfo = VK.zero {
         VK.applicationName = Just $ BLU.pack (cfg^.windowTitle),
@@ -86,13 +89,13 @@ vkCreateInstance cfg = do
     }
 
     -- Check that required extensions are present
-    glfwExtensions <- GLFW.getRequiredInstanceExtensions
+    glfwExtensions <- liftIO GLFW.getRequiredInstanceExtensions
     reqExts <-
         if vkEnableValidationLayers then do
-            debugExt <- newCString VK.EXT_DEBUG_UTILS_EXTENSION_NAME
+            debugExt <- liftIO $ newCString VK.EXT_DEBUG_UTILS_EXTENSION_NAME
             return (glfwExtensions ++ [debugExt])
         else return glfwExtensions
-    reqExts <- V.fromList <$> mapM B.packCString reqExts
+    reqExts <- liftIO $ V.fromList <$> mapM B.packCString reqExts
 
     (_, exts) <- VK.enumerateInstanceExtensionProperties Nothing
     let extNames = V.map VK.extensionName exts
@@ -117,10 +120,22 @@ vkCreateInstance cfg = do
     }
     VK.createInstance createInfo Nothing
 
+vkDbgFunction :: VK.FN_vkDebugUtilsMessengerCallbackEXT
+vkDbgFunction sevFlags _ callbackData _ = do
+    msg <- VK.message <$> VK.peekCStruct callbackData
+    hPutStr stderr "Vulkan Debug Message: "
+    hPrint stderr msg
+    return VK.TRUE
+
+foreign import ccall "wrapper" createDbgPtr :: 
+    VK.FN_vkDebugUtilsMessengerCallbackEXT -> 
+    IO (FunPtr VK.FN_vkDebugUtilsMessengerCallbackEXT)
+
 vkSetupDebugMessenger :: 
+    MonadIO m =>
     VK.Instance -> 
     FunPtr VK.FN_vkDebugUtilsMessengerCallbackEXT -> 
-    IO VK.DebugUtilsMessengerEXT
+    m VK.DebugUtilsMessengerEXT
 vkSetupDebugMessenger inst dbgPtr = do
     let dgbCreateInfo = VK.zero {
         VK.messageSeverity =
@@ -136,33 +151,73 @@ vkSetupDebugMessenger inst dbgPtr = do
     }
     VK.createDebugUtilsMessengerEXT inst dgbCreateInfo Nothing
 
-vkDbgFunction :: VK.FN_vkDebugUtilsMessengerCallbackEXT
-vkDbgFunction sevFlags _ callbackData _ = do
-    msg <- VK.message <$> VK.peekCStruct callbackData
-    hPutStr stderr "Vulkan Debug Message: "
-    hPrint stderr msg
-    return VK.TRUE
+vkIsDeviceSuitable :: MonadIO m => VK.PhysicalDevice -> m Bool
+vkIsDeviceSuitable dev = do
+    props <- VK.getPhysicalDeviceProperties dev
+    feats <- VK.getPhysicalDeviceFeatures dev
+    queue <- VK.getPhysicalDeviceQueueFamilyProperties dev
+    return (
+        VK.deviceType props == VK.PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+        && VK.tessellationShader feats
+        && not (V.null queue)
+        && not (V.null $ V.filter (\q -> VK.queueFlags q .&. VK.QUEUE_GRAPHICS_BIT /= zeroBits) queue))
 
-foreign import ccall "wrapper" createDbgPtr :: 
-    VK.FN_vkDebugUtilsMessengerCallbackEXT -> 
-    IO (FunPtr VK.FN_vkDebugUtilsMessengerCallbackEXT)
+vkPickPhysicalDevice :: MonadIO m => VK.Instance -> m VK.PhysicalDevice
+vkPickPhysicalDevice inst = do
+    (_, devs) <- VK.enumeratePhysicalDevices inst
+    when (V.null devs) $ throw $ VulkanException VK.ERROR_DEVICE_LOST
+    V.head <$> V.filterM vkIsDeviceSuitable devs
+
+vkCreateLogicalDevice :: MonadIO m => VK.PhysicalDevice -> m (VK.Device, VK.Queue)
+vkCreateLogicalDevice dev = do
+    queues <- VK.getPhysicalDeviceQueueFamilyProperties dev
+    let qFlags = V.map VK.queueFlags queues
+    let qGraphs = V.map (.&. VK.QUEUE_GRAPHICS_BIT) qFlags
+    let qAccept = V.findIndex (/= zeroBits) qGraphs
+
+    when (isNothing qAccept) $ throw $ VulkanException VK.ERROR_INCOMPATIBLE_DISPLAY_KHR
+
+    let famIdx = toEnum $ fromJust qAccept
+    let queueCreateInfo = VK.zero {
+        VK.queueFamilyIndex = famIdx,
+        VK.queuePriorities = V.fromList [1.0]
+    }
+    let deviceFeatures = VK.zero
+
+    enabledLayers <-
+        if vkEnableValidationLayers then return $ V.fromList vkRequiredLayers
+        else return V.empty
+
+    let createInfo = VK.zero {
+        VK.queueCreateInfos = V.fromList [SomeStruct queueCreateInfo],
+        VK.enabledFeatures = Just deviceFeatures,
+        VK.enabledExtensionNames = V.empty,
+        VK.enabledLayerNames = enabledLayers
+    }
+    
+    vDev <- VK.createDevice dev createInfo Nothing
+    gQueue <- VK.getDeviceQueue vDev famIdx 0
+    return (vDev, gQueue)
 
 -- |Sets up Vulkan
-vkInitialize :: Config -> IO InternalValues
+vkInitialize :: MonadIO m => Config -> m InternalValues
 vkInitialize cfg = do
     inst <- vkCreateInstance cfg
     (dbgPtr, dbgMsg) <-
         if vkEnableValidationLayers then do
-            p <- createDbgPtr vkDbgFunction
+            p <- liftIO $ createDbgPtr vkDbgFunction
             m <- vkSetupDebugMessenger inst p
             return (p, Just m)
         else return (nullFunPtr, Nothing)
-    return $ Vulkan inst dbgPtr dbgMsg
+    dev <- vkPickPhysicalDevice inst
+    (dev, gQueue) <- vkCreateLogicalDevice dev
+    return $ Vulkan inst dbgPtr dbgMsg dev gQueue
 
 -- |Terminates Vulkan
-vkCleanUp :: InternalValues -> IO ()
-vkCleanUp (Vulkan inst dbgPtr dbgMsg) = do
+vkCleanUp :: MonadIO m => InternalValues -> m ()
+vkCleanUp (Vulkan inst dbgPtr dbgMsg dev _) = do
     when vkEnableValidationLayers $ do
         VK.destroyDebugUtilsMessengerEXT inst (fromJust dbgMsg) Nothing
-        freeHaskellFunPtr dbgPtr
+        liftIO $ freeHaskellFunPtr dbgPtr
     VK.destroyInstance inst Nothing
+    VK.destroyDevice dev Nothing
