@@ -120,23 +120,11 @@ vkCreateInstance cfg = do
     }
     VK.createInstance createInfo Nothing
 
-vkDbgFunction :: VK.FN_vkDebugUtilsMessengerCallbackEXT
-vkDbgFunction sevFlags _ callbackData _ = do
-    msg <- VK.message <$> VK.peekCStruct callbackData
-    hPutStr stderr "Vulkan Debug Message: "
-    hPrint stderr msg
-    return VK.TRUE
+foreign import ccall unsafe "debugCallback.c &debugCallback"
+  debugCallbackPtr :: VK.PFN_vkDebugUtilsMessengerCallbackEXT
 
-foreign import ccall "wrapper" createDbgPtr :: 
-    VK.FN_vkDebugUtilsMessengerCallbackEXT -> 
-    IO (FunPtr VK.FN_vkDebugUtilsMessengerCallbackEXT)
-
-vkSetupDebugMessenger :: 
-    MonadIO m =>
-    VK.Instance -> 
-    FunPtr VK.FN_vkDebugUtilsMessengerCallbackEXT -> 
-    m VK.DebugUtilsMessengerEXT
-vkSetupDebugMessenger inst dbgPtr = do
+vkSetupDebugMessenger :: MonadIO m => VK.Instance -> m VK.DebugUtilsMessengerEXT
+vkSetupDebugMessenger inst = do
     let dgbCreateInfo = VK.zero {
         VK.messageSeverity =
             VK.DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT 
@@ -147,7 +135,7 @@ vkSetupDebugMessenger inst dbgPtr = do
             VK.DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT 
             .|. VK.DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT 
             .|. VK.DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
-        VK.pfnUserCallback = dbgPtr
+        VK.pfnUserCallback = debugCallbackPtr
     }
     VK.createDebugUtilsMessengerEXT inst dgbCreateInfo Nothing
 
@@ -203,21 +191,16 @@ vkCreateLogicalDevice dev = do
 vkInitialize :: MonadIO m => Config -> m InternalValues
 vkInitialize cfg = do
     inst <- vkCreateInstance cfg
-    (dbgPtr, dbgMsg) <-
-        if vkEnableValidationLayers then do
-            p <- liftIO $ createDbgPtr vkDbgFunction
-            m <- vkSetupDebugMessenger inst p
-            return (p, Just m)
-        else return (nullFunPtr, Nothing)
+    dbgMsg <-
+        if vkEnableValidationLayers then Just <$> vkSetupDebugMessenger inst
+        else return Nothing
     dev <- vkPickPhysicalDevice inst
     (dev, gQueue) <- vkCreateLogicalDevice dev
-    return $ Vulkan inst dbgPtr dbgMsg dev gQueue
+    return $ Vulkan inst dbgMsg dev gQueue
 
 -- |Terminates Vulkan
 vkCleanUp :: MonadIO m => InternalValues -> m ()
-vkCleanUp (Vulkan inst dbgPtr dbgMsg dev _) = do
-    when vkEnableValidationLayers $ do
-        VK.destroyDebugUtilsMessengerEXT inst (fromJust dbgMsg) Nothing
-        liftIO $ freeHaskellFunPtr dbgPtr
-    VK.destroyInstance inst Nothing
+vkCleanUp (Vulkan inst dbgMsg dev _) = do
     VK.destroyDevice dev Nothing
+    when vkEnableValidationLayers $ VK.destroyDebugUtilsMessengerEXT inst (fromJust dbgMsg) Nothing
+    VK.destroyInstance inst Nothing

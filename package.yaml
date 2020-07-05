@@ -37,6 +37,7 @@ dependencies:
 
 library:
   source-dirs: src
+  c-sources: cbits/debugCallback.c
 
 executables:
   haskfey-exe:

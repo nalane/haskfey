@@ -11,4 +11,4 @@ import Foreign.Ptr
 -- |Persistent state of the engine
 data InternalValues = 
     OpenGL | 
-    Vulkan VK.Instance (FunPtr VK.FN_vkDebugUtilsMessengerCallbackEXT) (Maybe VK.DebugUtilsMessengerEXT) VK.Device VK.Queue
+    Vulkan VK.Instance (Maybe VK.DebugUtilsMessengerEXT) VK.Device VK.Queue

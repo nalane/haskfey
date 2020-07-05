@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5a42b47493197bd17dccdacd9d8df09f5bdb6e107c734ebdd4357bebf3b7fc70
+-- hash: 1e6ad57515d1553cfcf383ee3c3c7c539ebbb6090dae36877d82658643ae3533
 
 name:           haskfey
 version:        0.1.0.0
@@ -53,6 +53,8 @@ library
       Paths_haskfey
   hs-source-dirs:
       src
+  c-sources:
+      cbits/debugCallback.c
   build-depends:
       GLFW-b
     , JuicyPixels
