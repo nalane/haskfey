@@ -85,7 +85,7 @@ initGame = do
     win <- liftIO $ initGLFW cfg k
     setStateVar window $ Just win
 
-    let funcs = getFunctions cfg
+    let funcs = getFunctions cfg win
     setStateVar gfxFunctions $ Just funcs
     iVals <- funcs^.initialize
     setStateVar gfxIValues $ Just iVals

@@ -19,12 +19,17 @@ import Vulkan.CStruct.Extends
 
 import Foreign.Ptr
 import Foreign.C.String
+import Foreign.Marshal.Utils
+import Foreign.Marshal.Alloc
+import Foreign.Storable
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as BLU
 import qualified Data.Vector as V
+import qualified Data.Set as S
 import Data.Bits
 import Data.Maybe
+import Data.Word
 
 import Control.Lens (makeLenses, (^.))
 import Control.Exception
@@ -43,8 +48,8 @@ data GraphicsFunctions m = GraphicsFunctions {
 
 makeLenses ''GraphicsFunctions
 
-getFunctions :: MonadIO m => Config -> GraphicsFunctions m
-getFunctions cfg =
+getFunctions :: MonadIO m => Config -> GLFW.Window -> GraphicsFunctions m
+getFunctions cfg win =
     let lib = cfg^.graphicsLib
     in case lib of
         OGL -> 
@@ -54,7 +59,7 @@ getFunctions cfg =
             }
         VK -> 
             GraphicsFunctions {
-                _initialize = vkInitialize cfg,
+                _initialize = vkInitialize cfg win,
                 _cleanUp = vkCleanUp
             }
 
@@ -156,51 +161,64 @@ vkPickPhysicalDevice inst = do
     when (V.null devs) $ throw $ VulkanException VK.ERROR_DEVICE_LOST
     V.head <$> V.filterM vkIsDeviceSuitable devs
 
-vkCreateLogicalDevice :: MonadIO m => VK.PhysicalDevice -> m (VK.Device, VK.Queue)
-vkCreateLogicalDevice dev = do
+vkCreateLogicalDevice :: MonadIO m => VK.PhysicalDevice -> VK.SurfaceKHR -> m (VK.Device, [VK.Queue])
+vkCreateLogicalDevice dev surface = do
     queues <- VK.getPhysicalDeviceQueueFamilyProperties dev
     let qFlags = V.map VK.queueFlags queues
     let qGraphs = V.map (.&. VK.QUEUE_GRAPHICS_BIT) qFlags
-    let qAccept = V.findIndex (/= zeroBits) qGraphs
 
-    when (isNothing qAccept) $ throw $ VulkanException VK.ERROR_INCOMPATIBLE_DISPLAY_KHR
+    let graphIndex = V.findIndex (/= zeroBits) qGraphs
+    presentIndex <- filterM (\i -> VK.getPhysicalDeviceSurfaceSupportKHR dev i surface) [0..toEnum (V.length queues - 1)]
+    when (isNothing graphIndex || null presentIndex) $ throw $ VulkanException VK.ERROR_INCOMPATIBLE_DISPLAY_KHR
 
-    let famIdx = toEnum $ fromJust qAccept
-    let queueCreateInfo = VK.zero {
-        VK.queueFamilyIndex = famIdx,
+    let queueIndices = S.toList $ S.fromList [toEnum $ fromJust graphIndex, head presentIndex]
+    let queueCreateInfos = map (\i -> VK.zero {
+        VK.queueFamilyIndex = i,
         VK.queuePriorities = V.fromList [1.0]
-    }
-    let deviceFeatures = VK.zero
+    }) queueIndices
 
     enabledLayers <-
         if vkEnableValidationLayers then return $ V.fromList vkRequiredLayers
         else return V.empty
-
     let createInfo = VK.zero {
-        VK.queueCreateInfos = V.fromList [SomeStruct queueCreateInfo],
-        VK.enabledFeatures = Just deviceFeatures,
+        VK.queueCreateInfos = V.fromList $ map SomeStruct queueCreateInfos,
+        VK.enabledFeatures = Just VK.zero,
         VK.enabledExtensionNames = V.empty,
         VK.enabledLayerNames = enabledLayers
     }
     
     vDev <- VK.createDevice dev createInfo Nothing
-    gQueue <- VK.getDeviceQueue vDev famIdx 0
-    return (vDev, gQueue)
+    queues <- mapM (\i -> VK.getDeviceQueue vDev i 0) queueIndices
+    return (vDev, queues)
+
+vkCreateSurface :: MonadIO m => VK.Instance -> GLFW.Window -> m VK.SurfaceKHR
+vkCreateSurface inst win = liftIO $ do
+    let instPtr = VK.instanceHandle inst
+
+    surfacePtr <- malloc :: IO (Ptr VK.SurfaceKHR)
+    res <- VK.Result <$> GLFW.createWindowSurface instPtr win nullPtr surfacePtr
+    when (res /= VK.SUCCESS) $ throw $ VulkanException res
+
+    surface <- peek surfacePtr
+    free surfacePtr
+    return surface
 
 -- |Sets up Vulkan
-vkInitialize :: MonadIO m => Config -> m InternalValues
-vkInitialize cfg = do
+vkInitialize :: MonadIO m => Config -> GLFW.Window -> m InternalValues
+vkInitialize cfg win = do
     inst <- vkCreateInstance cfg
     dbgMsg <-
         if vkEnableValidationLayers then Just <$> vkSetupDebugMessenger inst
         else return Nothing
+    surface <- vkCreateSurface inst win
     dev <- vkPickPhysicalDevice inst
-    (dev, gQueue) <- vkCreateLogicalDevice dev
-    return $ Vulkan inst dbgMsg dev gQueue
+    (dev, queues) <- vkCreateLogicalDevice dev surface
+    return $ Vulkan inst dbgMsg dev queues surface
 
 -- |Terminates Vulkan
 vkCleanUp :: MonadIO m => InternalValues -> m ()
-vkCleanUp (Vulkan inst dbgMsg dev _) = do
+vkCleanUp (Vulkan inst dbgMsg dev _ surface) = do
     VK.destroyDevice dev Nothing
     when vkEnableValidationLayers $ VK.destroyDebugUtilsMessengerEXT inst (fromJust dbgMsg) Nothing
+    VK.destroySurfaceKHR inst surface Nothing
     VK.destroyInstance inst Nothing
