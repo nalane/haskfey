@@ -82,6 +82,9 @@ vkEnableValidationLayers = True
 vkRequiredLayers :: [BLU.ByteString]
 vkRequiredLayers = map BLU.pack ["VK_LAYER_KHRONOS_validation"]
 
+vkDeviceExtensions :: [BLU.ByteString]
+vkDeviceExtensions = map BLU.pack [VK.KHR_SWAPCHAIN_EXTENSION_NAME]
+
 -- Create a Vulkan instance
 vkCreateInstance :: MonadIO m => Config -> m VK.Instance
 vkCreateInstance cfg = do
@@ -144,24 +147,44 @@ vkSetupDebugMessenger inst = do
     }
     VK.createDebugUtilsMessengerEXT inst dgbCreateInfo Nothing
 
-vkIsDeviceSuitable :: MonadIO m => VK.PhysicalDevice -> m Bool
-vkIsDeviceSuitable dev = do
+vkQuerySwapChainSupport :: 
+    MonadIO m => 
+    VK.PhysicalDevice -> 
+    VK.SurfaceKHR -> 
+    m (VK.SurfaceCapabilitiesKHR, V.Vector VK.SurfaceFormatKHR, V.Vector VK.PresentModeKHR)
+vkQuerySwapChainSupport dev surface = do
+    caps <- VK.getPhysicalDeviceSurfaceCapabilitiesKHR dev surface
+    (_, fmts) <- VK.getPhysicalDeviceSurfaceFormatsKHR dev surface
+    (_, modes) <- VK.getPhysicalDeviceSurfacePresentModesKHR dev surface
+    return (caps, fmts, modes)
+
+vkIsDeviceSuitable :: MonadIO m => VK.SurfaceKHR -> VK.PhysicalDevice -> m Bool
+vkIsDeviceSuitable surface dev = do
     props <- VK.getPhysicalDeviceProperties dev
     feats <- VK.getPhysicalDeviceFeatures dev
     queue <- VK.getPhysicalDeviceQueueFamilyProperties dev
-    return (
-        VK.deviceType props == VK.PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
-        && VK.tessellationShader feats
-        && not (V.null queue)
-        && not (V.null $ V.filter (\q -> VK.queueFlags q .&. VK.QUEUE_GRAPHICS_BIT /= zeroBits) queue))
 
-vkPickPhysicalDevice :: MonadIO m => VK.Instance -> m VK.PhysicalDevice
-vkPickPhysicalDevice inst = do
+    (_, extProps) <- VK.enumerateDeviceExtensionProperties dev Nothing
+    let extensionsSupported = all (`V.elem` (V.map VK.extensionName extProps)) vkDeviceExtensions
+
+    if extensionsSupported then do
+        (_, swapFormats, swapModes) <- vkQuerySwapChainSupport dev surface
+        return (
+            VK.deviceType props == VK.PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+            && VK.tessellationShader feats
+            && not (V.null queue)
+            && not (V.null $ V.filter (\q -> VK.queueFlags q .&. VK.QUEUE_GRAPHICS_BIT /= zeroBits) queue)
+            && not (V.null swapFormats)
+            && not (V.null swapModes))
+    else return False
+
+vkPickPhysicalDevice :: MonadIO m => VK.Instance -> VK.SurfaceKHR -> m VK.PhysicalDevice
+vkPickPhysicalDevice inst surface = do
     (_, devs) <- VK.enumeratePhysicalDevices inst
     when (V.null devs) $ throw $ VulkanException VK.ERROR_DEVICE_LOST
-    V.head <$> V.filterM vkIsDeviceSuitable devs
+    V.head <$> V.filterM (vkIsDeviceSuitable surface) devs
 
-vkCreateLogicalDevice :: MonadIO m => VK.PhysicalDevice -> VK.SurfaceKHR -> m (VK.Device, [VK.Queue])
+vkCreateLogicalDevice :: MonadIO m => VK.PhysicalDevice -> VK.SurfaceKHR -> m (VK.Device, [VK.Queue], [Word32])
 vkCreateLogicalDevice dev surface = do
     queues <- VK.getPhysicalDeviceQueueFamilyProperties dev
     let qFlags = V.map VK.queueFlags queues
@@ -183,13 +206,13 @@ vkCreateLogicalDevice dev surface = do
     let createInfo = VK.zero {
         VK.queueCreateInfos = V.fromList $ map SomeStruct queueCreateInfos,
         VK.enabledFeatures = Just VK.zero,
-        VK.enabledExtensionNames = V.empty,
+        VK.enabledExtensionNames = V.fromList vkDeviceExtensions,
         VK.enabledLayerNames = enabledLayers
     }
     
     vDev <- VK.createDevice dev createInfo Nothing
     queues <- mapM (\i -> VK.getDeviceQueue vDev i 0) queueIndices
-    return (vDev, queues)
+    return (vDev, queues, queueIndices)
 
 vkCreateSurface :: MonadIO m => VK.Instance -> GLFW.Window -> m VK.SurfaceKHR
 vkCreateSurface inst win = liftIO $ do
@@ -203,6 +226,61 @@ vkCreateSurface inst win = liftIO $ do
     free surfacePtr
     return surface
 
+vkChooseSwapSurfaceFormat :: V.Vector VK.SurfaceFormatKHR -> VK.SurfaceFormatKHR
+vkChooseSwapSurfaceFormat formats 
+    | V.null acceptedFormats = V.head formats
+    | otherwise = V.head acceptedFormats where
+        acceptedFormats = V.filter (\(VK.SurfaceFormatKHR format colorSpace) -> 
+            (format == VK.FORMAT_B8G8R8A8_SRGB) 
+            && (colorSpace == VK.COLOR_SPACE_SRGB_NONLINEAR_KHR)) formats
+
+vkChooseSwapPresentMode :: V.Vector VK.PresentModeKHR -> VK.PresentModeKHR
+vkChooseSwapPresentMode modes
+    | VK.PRESENT_MODE_MAILBOX_KHR `V.elem` modes = VK.PRESENT_MODE_MAILBOX_KHR
+    | otherwise = VK.PRESENT_MODE_FIFO_KHR
+
+vkChooseSwapExtent :: VK.SurfaceCapabilitiesKHR -> Config -> VK.Extent2D
+vkChooseSwapExtent (VK.SurfaceCapabilitiesKHR _ _ currentExtent minImageExtent maxImageExtent _ _ _ _ _) cfg =
+    if w /= maxBound then currentExtent
+    else VK.Extent2D actualWidth actualHeight where
+        (VK.Extent2D w h) = currentExtent
+        (VK.Extent2D maxExtentW maxExtentH) = maxImageExtent
+        (VK.Extent2D minExtentW minExtentH) = minImageExtent
+        actualWidth = max minExtentW $ min maxExtentW $ toEnum (cfg^.width)
+        actualHeight = max minExtentH $ min maxExtentH $ toEnum (cfg^.height)
+
+vkCreateSwapChain :: MonadIO m => VK.PhysicalDevice -> VK.Device -> VK.SurfaceKHR -> [Word32] -> Config -> m VK.SwapchainKHR
+vkCreateSwapChain pDev vDev surface queues cfg = do
+    (caps, fmts, modes) <- vkQuerySwapChainSupport pDev surface
+    let (VK.SurfaceFormatKHR format colorSpace) = vkChooseSwapSurfaceFormat fmts
+    let presentMode = vkChooseSwapPresentMode modes
+    let extent = vkChooseSwapExtent caps cfg
+
+    let (VK.SurfaceCapabilitiesKHR minImageCount _ _ _ _ _ _ currentTransform _ _) = caps
+    let imageCount = minImageCount + 1
+
+    let (imageSharingMode, queueFamilyIndices) = if (length queues > 1) && ((queues !! 0) /= (queues !! 1))
+        then (VK.SHARING_MODE_CONCURRENT, V.fromList queues)
+        else (VK.SHARING_MODE_EXCLUSIVE, V.empty)
+
+    let createInfo = VK.zero {
+        VK.surface = surface,
+        VK.minImageCount = imageCount,
+        VK.imageFormat = format,
+        VK.imageColorSpace = colorSpace,
+        VK.imageExtent = extent,
+        VK.imageArrayLayers = 1,
+        VK.imageUsage = VK.IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        VK.imageSharingMode = imageSharingMode,
+        VK.queueFamilyIndices = queueFamilyIndices,
+        VK.preTransform = currentTransform,
+        VK.compositeAlpha = VK.COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        VK.presentMode = presentMode,
+        VK.clipped = True
+    }
+
+    VK.createSwapchainKHR vDev createInfo Nothing
+
 -- |Sets up Vulkan
 vkInitialize :: MonadIO m => Config -> GLFW.Window -> m InternalValues
 vkInitialize cfg win = do
@@ -211,13 +289,15 @@ vkInitialize cfg win = do
         if vkEnableValidationLayers then Just <$> vkSetupDebugMessenger inst
         else return Nothing
     surface <- vkCreateSurface inst win
-    dev <- vkPickPhysicalDevice inst
-    (dev, queues) <- vkCreateLogicalDevice dev surface
-    return $ Vulkan inst dbgMsg dev queues surface
+    pDev <- vkPickPhysicalDevice inst surface
+    (vDev, queues, queueIndices) <- vkCreateLogicalDevice pDev surface
+    swapchain <- vkCreateSwapChain pDev vDev surface queueIndices cfg
+    return $ Vulkan inst dbgMsg vDev queues surface swapchain
 
 -- |Terminates Vulkan
 vkCleanUp :: MonadIO m => InternalValues -> m ()
-vkCleanUp (Vulkan inst dbgMsg dev _ surface) = do
+vkCleanUp (Vulkan inst dbgMsg dev _ surface swapchain) = do
+    VK.destroySwapchainKHR dev swapchain Nothing
     VK.destroyDevice dev Nothing
     when vkEnableValidationLayers $ VK.destroyDebugUtilsMessengerEXT inst (fromJust dbgMsg) Nothing
     VK.destroySurfaceKHR inst surface Nothing
