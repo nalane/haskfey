@@ -249,7 +249,13 @@ vkChooseSwapExtent (VK.SurfaceCapabilitiesKHR _ _ currentExtent minImageExtent m
         actualWidth = max minExtentW $ min maxExtentW $ toEnum (cfg^.width)
         actualHeight = max minExtentH $ min maxExtentH $ toEnum (cfg^.height)
 
-vkCreateSwapChain :: MonadIO m => VK.PhysicalDevice -> VK.Device -> VK.SurfaceKHR -> [Word32] -> Config -> m VK.SwapchainKHR
+vkCreateSwapChain :: MonadIO m => 
+    VK.PhysicalDevice -> 
+    VK.Device -> 
+    VK.SurfaceKHR ->
+    [Word32] -> 
+    Config -> 
+    m (VK.SwapchainKHR, V.Vector VK.Image, VK.Format, VK.Extent2D)
 vkCreateSwapChain pDev vDev surface queues cfg = do
     (caps, fmts, modes) <- vkQuerySwapChainSupport pDev surface
     let (VK.SurfaceFormatKHR format colorSpace) = vkChooseSwapSurfaceFormat fmts
@@ -279,7 +285,33 @@ vkCreateSwapChain pDev vDev surface queues cfg = do
         VK.clipped = True
     }
 
-    VK.createSwapchainKHR vDev createInfo Nothing
+    swapchain <- VK.createSwapchainKHR vDev createInfo Nothing
+    (_, images) <- VK.getSwapchainImagesKHR vDev swapchain
+    return (swapchain, images, format, extent)
+
+vkCreateImageViews :: MonadIO m => V.Vector VK.Image -> VK.Format -> VK.Device -> m (V.Vector VK.ImageView)
+vkCreateImageViews images format dev = V.mapM (\image -> do
+    let components = VK.zero {
+        VK.r = VK.COMPONENT_SWIZZLE_IDENTITY,
+        VK.g = VK.COMPONENT_SWIZZLE_IDENTITY,
+        VK.b = VK.COMPONENT_SWIZZLE_IDENTITY,
+        VK.a = VK.COMPONENT_SWIZZLE_IDENTITY
+    }
+    let subresourceRange = VK.zero {
+        VK.aspectMask = VK.IMAGE_ASPECT_COLOR_BIT,
+        VK.baseMipLevel = 0,
+        VK.levelCount = 1,
+        VK.baseArrayLayer = 0,
+        VK.layerCount = 1
+    }
+    let createInfo = VK.zero {
+        VK.image = image,
+        VK.viewType = VK.IMAGE_VIEW_TYPE_2D,
+        VK.format = format,
+        VK.components = components,
+        VK.subresourceRange = subresourceRange
+    }
+    VK.createImageView dev createInfo Nothing) images
 
 -- |Sets up Vulkan
 vkInitialize :: MonadIO m => Config -> GLFW.Window -> m InternalValues
@@ -291,12 +323,14 @@ vkInitialize cfg win = do
     surface <- vkCreateSurface inst win
     pDev <- vkPickPhysicalDevice inst surface
     (vDev, queues, queueIndices) <- vkCreateLogicalDevice pDev surface
-    swapchain <- vkCreateSwapChain pDev vDev surface queueIndices cfg
-    return $ Vulkan inst dbgMsg vDev queues surface swapchain
+    (swapchain, images, format, extent) <- vkCreateSwapChain pDev vDev surface queueIndices cfg
+    imageViews <- vkCreateImageViews images format vDev
+    return $ Vulkan inst dbgMsg vDev queues surface swapchain images format extent imageViews
 
 -- |Terminates Vulkan
 vkCleanUp :: MonadIO m => InternalValues -> m ()
-vkCleanUp (Vulkan inst dbgMsg dev _ surface swapchain) = do
+vkCleanUp (Vulkan inst dbgMsg dev _ surface swapchain _ _ _ imageViews) = do
+    V.forM_ imageViews (\view -> VK.destroyImageView dev view Nothing)
     VK.destroySwapchainKHR dev swapchain Nothing
     VK.destroyDevice dev Nothing
     when vkEnableValidationLayers $ VK.destroyDebugUtilsMessengerEXT inst (fromJust dbgMsg) Nothing
