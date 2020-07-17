@@ -41,6 +41,9 @@ import System.IO
 import Config
 import Graphics.InternalValues
 
+foreign import ccall unsafe "debugCallback.c &debugCallback"
+  debugCallbackPtr :: VK.PFN_vkDebugUtilsMessengerCallbackEXT
+
 data GraphicsFunctions m = GraphicsFunctions {
     _initialize :: m InternalValues,
     _cleanUp :: InternalValues -> m ()
@@ -63,7 +66,7 @@ getFunctions cfg win =
                 _cleanUp = vkCleanUp
             }
 
-
+--------------------------OpenGL--------------------------
 
 -- |Sets up OpenGL variables that determine how it renders
 glInitialize :: MonadIO m => m InternalValues
@@ -74,7 +77,7 @@ glInitialize = do
     GL.frontFace $= GL.CCW
     return OpenGL
 
-
+--------------------------Vulkan--------------------------
 
 vkEnableValidationLayers :: Bool
 vkEnableValidationLayers = True
@@ -128,9 +131,6 @@ vkCreateInstance cfg = do
     }
     VK.createInstance createInfo Nothing
 
-foreign import ccall unsafe "debugCallback.c &debugCallback"
-  debugCallbackPtr :: VK.PFN_vkDebugUtilsMessengerCallbackEXT
-
 vkSetupDebugMessenger :: MonadIO m => VK.Instance -> m VK.DebugUtilsMessengerEXT
 vkSetupDebugMessenger inst = do
     let dgbCreateInfo = VK.zero {
@@ -165,7 +165,7 @@ vkIsDeviceSuitable surface dev = do
     queue <- VK.getPhysicalDeviceQueueFamilyProperties dev
 
     (_, extProps) <- VK.enumerateDeviceExtensionProperties dev Nothing
-    let extensionsSupported = all (`V.elem` (V.map VK.extensionName extProps)) vkDeviceExtensions
+    let extensionsSupported = all (`V.elem` V.map VK.extensionName extProps) vkDeviceExtensions
 
     if extensionsSupported then do
         (_, swapFormats, swapModes) <- vkQuerySwapChainSupport dev surface
@@ -265,7 +265,7 @@ vkCreateSwapChain pDev vDev surface queues cfg = do
     let (VK.SurfaceCapabilitiesKHR minImageCount _ _ _ _ _ _ currentTransform _ _) = caps
     let imageCount = minImageCount + 1
 
-    let (imageSharingMode, queueFamilyIndices) = if (length queues > 1) && ((queues !! 0) /= (queues !! 1))
+    let (imageSharingMode, queueFamilyIndices) = if (length queues > 1) && (head queues /= (queues !! 1))
         then (VK.SHARING_MODE_CONCURRENT, V.fromList queues)
         else (VK.SHARING_MODE_EXCLUSIVE, V.empty)
 
