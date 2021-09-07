@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1e6ad57515d1553cfcf383ee3c3c7c539ebbb6090dae36877d82658643ae3533
+-- hash: b2d92b0386b4f49e02ff596bf04e24c087f8a696e9bcea32d4227b72a160d57d
 
 name:           haskfey
 version:        0.1.0.0
@@ -60,7 +60,7 @@ library
     , JuicyPixels
     , OpenGL
     , StateVar
-    , base >=4.7 && <5
+    , base
     , bytestring
     , containers
     , ekg
@@ -89,7 +89,7 @@ executable haskfey-exe
     , JuicyPixels
     , OpenGL
     , StateVar
-    , base >=4.7 && <5
+    , base
     , bytestring
     , containers
     , ekg
@@ -115,7 +115,7 @@ test-suite haskfey-test
     , JuicyPixels
     , OpenGL
     , StateVar
-    , base >=4.7 && <5
+    , base
     , bytestring
     , containers
     , ekg

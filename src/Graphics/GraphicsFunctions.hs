@@ -16,6 +16,7 @@ import Graphics.Rendering.OpenGL (($=))
 import qualified Vulkan as VK
 import Vulkan.Exception
 import Vulkan.CStruct.Extends
+import Vulkan.Zero (zero)
 
 import Foreign.Ptr
 import Foreign.C.String
@@ -91,7 +92,7 @@ vkDeviceExtensions = map BLU.pack [VK.KHR_SWAPCHAIN_EXTENSION_NAME]
 -- Create a Vulkan instance
 vkCreateInstance :: MonadIO m => Config -> m VK.Instance
 vkCreateInstance cfg = do
-    let appInfo = VK.zero {
+    let appInfo = zero {
         VK.applicationName = Just $ BLU.pack (cfg^.windowTitle),
         VK.applicationVersion = 1,
         VK.engineName = Just $ BLU.pack "HaskFey",
@@ -124,7 +125,7 @@ vkCreateInstance cfg = do
         else return V.empty
 
     -- Create instance
-    let createInfo = VK.zero {
+    let createInfo = zero {
         VK.applicationInfo = Just appInfo,
         VK.enabledExtensionNames = reqExts,
         VK.enabledLayerNames = layers
@@ -133,7 +134,7 @@ vkCreateInstance cfg = do
 
 vkSetupDebugMessenger :: MonadIO m => VK.Instance -> m VK.DebugUtilsMessengerEXT
 vkSetupDebugMessenger inst = do
-    let dgbCreateInfo = VK.zero {
+    let dgbCreateInfo = zero {
         VK.messageSeverity =
             VK.DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT 
             .|. VK.DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
@@ -195,7 +196,7 @@ vkCreateLogicalDevice dev surface = do
     when (isNothing graphIndex || null presentIndex) $ throw $ VulkanException VK.ERROR_INCOMPATIBLE_DISPLAY_KHR
 
     let queueIndices = S.toList $ S.fromList [toEnum $ fromJust graphIndex, head presentIndex]
-    let queueCreateInfos = map (\i -> VK.zero {
+    let queueCreateInfos = map (\i -> zero {
         VK.queueFamilyIndex = i,
         VK.queuePriorities = V.fromList [1.0]
     }) queueIndices
@@ -203,9 +204,9 @@ vkCreateLogicalDevice dev surface = do
     enabledLayers <-
         if vkEnableValidationLayers then return $ V.fromList vkRequiredLayers
         else return V.empty
-    let createInfo = VK.zero {
+    let createInfo = zero {
         VK.queueCreateInfos = V.fromList $ map SomeStruct queueCreateInfos,
-        VK.enabledFeatures = Just VK.zero,
+        VK.enabledFeatures = Just zero,
         VK.enabledExtensionNames = V.fromList vkDeviceExtensions,
         VK.enabledLayerNames = enabledLayers
     }
@@ -269,7 +270,7 @@ vkCreateSwapChain pDev vDev surface queues cfg = do
         then (VK.SHARING_MODE_CONCURRENT, V.fromList queues)
         else (VK.SHARING_MODE_EXCLUSIVE, V.empty)
 
-    let createInfo = VK.zero {
+    let createInfo = zero {
         VK.surface = surface,
         VK.minImageCount = imageCount,
         VK.imageFormat = format,
@@ -291,20 +292,20 @@ vkCreateSwapChain pDev vDev surface queues cfg = do
 
 vkCreateImageViews :: MonadIO m => V.Vector VK.Image -> VK.Format -> VK.Device -> m (V.Vector VK.ImageView)
 vkCreateImageViews images format dev = V.mapM (\image -> do
-    let components = VK.zero {
+    let components = zero {
         VK.r = VK.COMPONENT_SWIZZLE_IDENTITY,
         VK.g = VK.COMPONENT_SWIZZLE_IDENTITY,
         VK.b = VK.COMPONENT_SWIZZLE_IDENTITY,
         VK.a = VK.COMPONENT_SWIZZLE_IDENTITY
     }
-    let subresourceRange = VK.zero {
+    let subresourceRange = zero {
         VK.aspectMask = VK.IMAGE_ASPECT_COLOR_BIT,
         VK.baseMipLevel = 0,
         VK.levelCount = 1,
         VK.baseArrayLayer = 0,
         VK.layerCount = 1
     }
-    let createInfo = VK.zero {
+    let createInfo = zero {
         VK.image = image,
         VK.viewType = VK.IMAGE_VIEW_TYPE_2D,
         VK.format = format,

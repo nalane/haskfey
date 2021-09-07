@@ -42,9 +42,7 @@ data Model = Model {
 makeLenses ''Model
 
 nVertParser :: Int -> Parser [GLfloat]
-nVertParser n = mapM (\_ -> do
-    spaces
-    ap sign floating) [1..n]
+nVertParser n = replicateM n (spaces *> sign <*> floating)
 
 vertex2Parser :: Parser (Vertex2 GLfloat)
 vertex2Parser = do
@@ -57,11 +55,7 @@ vertex3Parser = do
     return $ Vertex3 x y z
 
 materialParser :: Parser Material
-materialParser = do
-    diffuse <- vertex3Parser
-    specular <- vertex3Parser
-    spaces
-    Material diffuse specular <$> nat
+materialParser = Material <$> vertex3Parser <*> vertex3Parser <* spaces <*> nat
 
 textureParser :: Parser String
 textureParser = many $ noneOf "\r\n"
@@ -81,12 +75,8 @@ mapParser = do
 
 helper :: Parser a -> Parser [a]
 helper p = do
-    num <- nat
-    spaces
-    count num (do
-        res <- p
-        spaces
-        return res)
+    num <- nat <* spaces
+    count num (p <* spaces)
 
 parser :: Parser (
     [Material], 
