@@ -21,4 +21,4 @@ main = do
     args <- getArgs
     let cfg = if null args then "feyData/fey.cfg" else head args
 
-    newState cfg >>= flip runFeyState mainGameMonad
+    newState cfg >>= runFeyState mainGameMonad
