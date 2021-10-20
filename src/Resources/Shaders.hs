@@ -43,13 +43,13 @@ loadProg shaders = do
 
 -- |Given a list of tuples containing a shader type and path to a shader,
 -- compiles the shaders and links them together.
-createShaderProgram :: [(ShaderType, FilePath)] -> IO Program
+createShaderProgram :: [(ShaderType, FilePath)] -> IO (Either String Program)
 createShaderProgram list = do
     shaders <- mapM (uncurry loadShader) list
     prog <- loadProg shaders
     deleteObjectNames shaders
 
-    return prog
+    return $ Right prog
 
 -- |Removes the given program from memory
 destroyShaderProgram :: Program -> IO ()

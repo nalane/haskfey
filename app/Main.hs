@@ -17,9 +17,8 @@ mainGameMonad = do
 main :: IO ()
 main = do
     --forkServer (pack "localhost") 8000
+
     args <- getArgs
-    cfg <- case args of
-        [] -> return "feyData/fey.cfg"
-        _ -> return $ head args
+    let cfg = if null args then "feyData/fey.cfg" else head args
 
     newState cfg >>= flip runFeyState mainGameMonad

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b2d92b0386b4f49e02ff596bf04e24c087f8a696e9bcea32d4227b72a160d57d
+-- hash: 0adb8d9427e93af61d68cc29cee62ce1d653db6f57cf3caa0c6e68dd37fc3091
 
 name:           haskfey
 version:        0.1.0.0
@@ -66,6 +66,7 @@ library
     , ekg
     , lens
     , monad-loops
+    , mtl
     , parsec
     , parsec3-numbers
     , vector
@@ -96,6 +97,7 @@ executable haskfey-exe
     , haskfey
     , lens
     , monad-loops
+    , mtl
     , parsec
     , parsec3-numbers
     , vector
@@ -122,6 +124,7 @@ test-suite haskfey-test
     , haskfey
     , lens
     , monad-loops
+    , mtl
     , parsec
     , parsec3-numbers
     , tasty

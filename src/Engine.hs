@@ -87,7 +87,7 @@ initGame = do
 
     let funcs = getFunctions cfg win
     setStateVar gfxFunctions $ Just funcs
-    iVals <- funcs^.initialize
+    iVals <- liftIO (funcs^.initialize)
     setStateVar gfxIValues $ Just iVals
 
 -- |The main game loop
@@ -128,7 +128,7 @@ endGame :: FeyState ()
 endGame = do
     functions <- fromJust <$> getStateVar gfxFunctions
     iVals <- fromJust <$> getStateVar gfxIValues
-    (functions^.cleanUp) iVals
+    liftIO $ (functions^.cleanUp) iVals
 
     win <- getStateVar window
     liftIO $ forM_ win GLFW.destroyWindow

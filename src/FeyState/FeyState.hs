@@ -14,7 +14,7 @@ import Control.Monad.IO.Class
 import Control.Lens
 
 -- |The FeyState monad itself
-newtype FeyState a = FeyState (State FeyState -> IO (State FeyState, a))
+newtype FeyState a = FeyState (State -> IO (State, a))
 
 instance Functor FeyState where
     -- |Given a function and a monadic value,
@@ -42,15 +42,15 @@ instance MonadIO FeyState where
         return (state, val))
 
 -- |Returns the value referred to by the Lens
-getStateVar :: ALens' (State FeyState) a -> FeyState a
+getStateVar :: ALens' State a -> FeyState a
 getStateVar getter = FeyState (\state -> return (state, state^#getter))
 
 -- |Set the state value referred to by the given Lens
-setStateVar :: ALens' (State FeyState) a -> a -> FeyState ()
+setStateVar :: ALens' State a -> a -> FeyState ()
 setStateVar setter val = FeyState (\state -> return (storing setter val state, ()))
 
 -- |Runs the FeyState and pushes it into the IO monad
-runFeyState :: State FeyState -> FeyState a -> IO a
+runFeyState :: State -> FeyState a -> IO a
 runFeyState state (FeyState f) = do
     (_, res) <- f state
     return res

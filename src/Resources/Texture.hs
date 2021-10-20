@@ -11,29 +11,30 @@ import Data.Vector.Storable
 
 newtype Texture = Texture GL.TextureObject
 
-createTexture :: FilePath -> IO Texture
+createTexture :: FilePath -> IO (Either String Texture)
 createTexture path = do
-    let fromEither (Right a) = a  
-    img <- convertRGBA8 .
-        fromEither <$>
-        readImage path
+    rawImg <- readImage path
+    case rawImg of
+        (Left e) -> return $ Left e
+        (Right i) -> do
+            let img = convertRGBA8 i
 
-    --GL.activeTexture $= GL.TextureUnit 0
-    texObj <- GL.genObjectName
-    GL.textureBinding GL.Texture2D $= Just texObj
+            --GL.activeTexture $= GL.TextureUnit 0
+            texObj <- GL.genObjectName
+            GL.textureBinding GL.Texture2D $= Just texObj
 
-    let (Image w32 h32 d) = img
-    let w = toEnum w32
-    let h = toEnum h32
-    unsafeWith d $ \ptr ->
-        GL.texImage2D GL.Texture2D GL.NoProxy 0 GL.RGBA8 (GL.TextureSize2D w h) 0 $
-        GL.PixelData GL.RGBA GL.UnsignedByte ptr
+            let (Image w32 h32 d) = img
+            let w = toEnum w32
+            let h = toEnum h32
+            unsafeWith d $ \ptr ->
+                GL.texImage2D GL.Texture2D GL.NoProxy 0 GL.RGBA8 (GL.TextureSize2D w h) 0 $
+                GL.PixelData GL.RGBA GL.UnsignedByte ptr
 
-    GL.textureFilter GL.Texture2D $= ((GL.Linear', Nothing), GL.Linear')
-    GL.textureWrapMode GL.Texture2D GL.S $= (GL.Mirrored, GL.ClampToEdge)
-    GL.textureWrapMode GL.Texture2D GL.T $= (GL.Mirrored, GL.ClampToEdge)
+            GL.textureFilter GL.Texture2D $= ((GL.Linear', Nothing), GL.Linear')
+            GL.textureWrapMode GL.Texture2D GL.S $= (GL.Mirrored, GL.ClampToEdge)
+            GL.textureWrapMode GL.Texture2D GL.T $= (GL.Mirrored, GL.ClampToEdge)
 
-    return $ Texture texObj
+            return $ Right $ Texture texObj
 
 drawTexture :: Texture -> IO ()
 drawTexture (Texture texObj) = do

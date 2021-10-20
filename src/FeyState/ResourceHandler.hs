@@ -20,6 +20,7 @@ import Data.Function (on)
 import Data.List
 import Data.Maybe
 import qualified Data.Map as M
+import Control.Monad.Error.Class (Error(noMsg))
 
 -- |A wrapper for resources containing the key and the resource itself
 data Resource a = Resource String a
@@ -37,9 +38,11 @@ shaderKey :: [(ShaderType, FilePath)] -> String
 shaderKey = concatMap snd . sortBy (flip compare `on` fst)
 
 loadResource :: 
-    ALens' (State FeyState) (M.Map String (a, Int)) ->
-    String -> String ->
-    IO a -> FeyState (Resource a)
+    ALens' State (M.Map String (a, Int)) ->
+    String -> 
+    String ->
+    IO (Either String a) -> 
+    FeyState (Resource a)
 loadResource mapLens key resName creator = do
     resMap <- getStateVar mapLens
     let mapVal = M.lookup key resMap
@@ -52,11 +55,16 @@ loadResource mapLens key resName creator = do
         Nothing -> do
             recordLog ("Loading " ++ resName ++ " " ++ key)
             res <- liftIO creator
-            setStateVar mapLens $ M.insert key (res, 1) resMap
-            return $ Resource key res
+            case res of
+                (Left msg) -> do
+                    recordLog $ "Loading resource " ++ key ++ " failed with message " ++ msg
+                    error "Loading resource failed" 
+                (Right r) -> do
+                    setStateVar mapLens $ M.insert key (r, 1) resMap
+                    return $ Resource key r
 
 unloadResource :: 
-    ALens' (State FeyState) (M.Map String (a, Int)) ->
+    ALens' State (M.Map String (a, Int)) ->
     String -> String ->
     (a -> IO ()) -> FeyState ()
 unloadResource mapLens key resName destructor = do

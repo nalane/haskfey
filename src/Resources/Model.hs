@@ -23,6 +23,7 @@ import Control.Monad
 import Text.Parsec
 import Text.Parsec.ByteString
 import Text.Parsec.Number
+import Text.ParserCombinators.Parsec.Error
 
 data Material = Material (Vertex3 GLfloat) (Vertex3 GLfloat) Int
 
@@ -94,24 +95,25 @@ parser = do
 
 
 -- |Read the model at the given path into memory.
-createModel :: FilePath -> IO Model
+createModel :: FilePath -> IO (Either String Model)
 createModel path = do
-    let fromEither (Right a) = a
     let diffuse (Material d _ _) = d
     
-    (mats, verts, texts, uvs, mapping) <- fromEither <$> parseFromFile parser path
-
-    let mat = if null mats then defaultMaterial else head mats
-    let v = map ((!) verts . fst) mapping
-    let u = map ((!) uvs . snd) mapping
-    let m = replicate (length v) $ diffuse mat
+    eitherVal <- parseFromFile parser path
+    case eitherVal of
+        (Left e) -> return $ Left $ messageString $ head $ errorMessages e
+        (Right (mats, verts, texts, uvs, mapping)) -> do 
+            let mat = if null mats then defaultMaterial else head mats
+            let v = map ((!) verts . fst) mapping
+            let u = map ((!) uvs . snd) mapping
+            let m = replicate (length v) $ diffuse mat
  
-    vertexArray <- createVertexArray
-    vertexBuffer <- createBuffer 0 3 v
-    colorBuffer <- createBuffer 1 3 m
-    uvBuffer <- createBuffer 2 2 u
+            vertexArray <- createVertexArray
+            vertexBuffer <- createBuffer 0 3 v
+            colorBuffer <- createBuffer 1 3 m
+            uvBuffer <- createBuffer 2 2 u
 
-    return $ Model vertexArray vertexBuffer colorBuffer uvBuffer (length v) texts
+            return $ Right $ Model vertexArray vertexBuffer colorBuffer uvBuffer (length v) texts
 
 -- |Draw the given model to the screen
 drawModel :: Model -> IO ()

@@ -45,14 +45,14 @@ import Graphics.InternalValues
 foreign import ccall unsafe "debugCallback.c &debugCallback"
   debugCallbackPtr :: VK.PFN_vkDebugUtilsMessengerCallbackEXT
 
-data GraphicsFunctions m = GraphicsFunctions {
-    _initialize :: m InternalValues,
-    _cleanUp :: InternalValues -> m ()
+data GraphicsFunctions = GraphicsFunctions {
+    _initialize :: IO InternalValues,
+    _cleanUp :: InternalValues -> IO ()
 }
 
 makeLenses ''GraphicsFunctions
 
-getFunctions :: MonadIO m => Config -> GLFW.Window -> GraphicsFunctions m
+getFunctions :: Config -> GLFW.Window -> GraphicsFunctions
 getFunctions cfg win =
     let lib = cfg^.graphicsLib
     in case lib of
@@ -70,7 +70,7 @@ getFunctions cfg win =
 --------------------------OpenGL--------------------------
 
 -- |Sets up OpenGL variables that determine how it renders
-glInitialize :: MonadIO m => m InternalValues
+glInitialize :: IO InternalValues
 glInitialize = do
     GL.clearColor $= GL.Color4 0 0 0 1
     GL.depthFunc $= Just GL.Less
@@ -90,7 +90,7 @@ vkDeviceExtensions :: [BLU.ByteString]
 vkDeviceExtensions = map BLU.pack [VK.KHR_SWAPCHAIN_EXTENSION_NAME]
 
 -- Create a Vulkan instance
-vkCreateInstance :: MonadIO m => Config -> m VK.Instance
+vkCreateInstance :: Config -> IO VK.Instance
 vkCreateInstance cfg = do
     let appInfo = zero {
         VK.applicationName = Just $ BLU.pack (cfg^.windowTitle),
@@ -132,7 +132,7 @@ vkCreateInstance cfg = do
     }
     VK.createInstance createInfo Nothing
 
-vkSetupDebugMessenger :: MonadIO m => VK.Instance -> m VK.DebugUtilsMessengerEXT
+vkSetupDebugMessenger :: VK.Instance -> IO VK.DebugUtilsMessengerEXT
 vkSetupDebugMessenger inst = do
     let dgbCreateInfo = zero {
         VK.messageSeverity =
@@ -149,17 +149,16 @@ vkSetupDebugMessenger inst = do
     VK.createDebugUtilsMessengerEXT inst dgbCreateInfo Nothing
 
 vkQuerySwapChainSupport :: 
-    MonadIO m => 
     VK.PhysicalDevice -> 
     VK.SurfaceKHR -> 
-    m (VK.SurfaceCapabilitiesKHR, V.Vector VK.SurfaceFormatKHR, V.Vector VK.PresentModeKHR)
+    IO (VK.SurfaceCapabilitiesKHR, V.Vector VK.SurfaceFormatKHR, V.Vector VK.PresentModeKHR)
 vkQuerySwapChainSupport dev surface = do
     caps <- VK.getPhysicalDeviceSurfaceCapabilitiesKHR dev surface
     (_, fmts) <- VK.getPhysicalDeviceSurfaceFormatsKHR dev surface
     (_, modes) <- VK.getPhysicalDeviceSurfacePresentModesKHR dev surface
     return (caps, fmts, modes)
 
-vkIsDeviceSuitable :: MonadIO m => VK.SurfaceKHR -> VK.PhysicalDevice -> m Bool
+vkIsDeviceSuitable :: VK.SurfaceKHR -> VK.PhysicalDevice -> IO Bool
 vkIsDeviceSuitable surface dev = do
     props <- VK.getPhysicalDeviceProperties dev
     feats <- VK.getPhysicalDeviceFeatures dev
@@ -179,13 +178,13 @@ vkIsDeviceSuitable surface dev = do
             && not (V.null swapModes))
     else return False
 
-vkPickPhysicalDevice :: MonadIO m => VK.Instance -> VK.SurfaceKHR -> m VK.PhysicalDevice
+vkPickPhysicalDevice :: VK.Instance -> VK.SurfaceKHR -> IO VK.PhysicalDevice
 vkPickPhysicalDevice inst surface = do
     (_, devs) <- VK.enumeratePhysicalDevices inst
     when (V.null devs) $ throw $ VulkanException VK.ERROR_DEVICE_LOST
     V.head <$> V.filterM (vkIsDeviceSuitable surface) devs
 
-vkCreateLogicalDevice :: MonadIO m => VK.PhysicalDevice -> VK.SurfaceKHR -> m (VK.Device, [VK.Queue], [Word32])
+vkCreateLogicalDevice :: VK.PhysicalDevice -> VK.SurfaceKHR -> IO (VK.Device, [VK.Queue], [Word32])
 vkCreateLogicalDevice dev surface = do
     queues <- VK.getPhysicalDeviceQueueFamilyProperties dev
     let qFlags = V.map VK.queueFlags queues
@@ -215,7 +214,7 @@ vkCreateLogicalDevice dev surface = do
     queues <- mapM (\i -> VK.getDeviceQueue vDev i 0) queueIndices
     return (vDev, queues, queueIndices)
 
-vkCreateSurface :: MonadIO m => VK.Instance -> GLFW.Window -> m VK.SurfaceKHR
+vkCreateSurface :: VK.Instance -> GLFW.Window -> IO VK.SurfaceKHR
 vkCreateSurface inst win = liftIO $ do
     let instPtr = VK.instanceHandle inst
 
@@ -250,13 +249,13 @@ vkChooseSwapExtent (VK.SurfaceCapabilitiesKHR _ _ currentExtent minImageExtent m
         actualWidth = max minExtentW $ min maxExtentW $ toEnum (cfg^.width)
         actualHeight = max minExtentH $ min maxExtentH $ toEnum (cfg^.height)
 
-vkCreateSwapChain :: MonadIO m => 
+vkCreateSwapChain ::
     VK.PhysicalDevice -> 
     VK.Device -> 
     VK.SurfaceKHR ->
     [Word32] -> 
     Config -> 
-    m (VK.SwapchainKHR, V.Vector VK.Image, VK.Format, VK.Extent2D)
+    IO (VK.SwapchainKHR, V.Vector VK.Image, VK.Format, VK.Extent2D)
 vkCreateSwapChain pDev vDev surface queues cfg = do
     (caps, fmts, modes) <- vkQuerySwapChainSupport pDev surface
     let (VK.SurfaceFormatKHR format colorSpace) = vkChooseSwapSurfaceFormat fmts
@@ -290,7 +289,7 @@ vkCreateSwapChain pDev vDev surface queues cfg = do
     (_, images) <- VK.getSwapchainImagesKHR vDev swapchain
     return (swapchain, images, format, extent)
 
-vkCreateImageViews :: MonadIO m => V.Vector VK.Image -> VK.Format -> VK.Device -> m (V.Vector VK.ImageView)
+vkCreateImageViews :: V.Vector VK.Image -> VK.Format -> VK.Device -> IO (V.Vector VK.ImageView)
 vkCreateImageViews images format dev = V.mapM (\image -> do
     let components = zero {
         VK.r = VK.COMPONENT_SWIZZLE_IDENTITY,
@@ -315,7 +314,7 @@ vkCreateImageViews images format dev = V.mapM (\image -> do
     VK.createImageView dev createInfo Nothing) images
 
 -- |Sets up Vulkan
-vkInitialize :: MonadIO m => Config -> GLFW.Window -> m InternalValues
+vkInitialize :: Config -> GLFW.Window -> IO InternalValues
 vkInitialize cfg win = do
     inst <- vkCreateInstance cfg
     dbgMsg <-
@@ -329,7 +328,7 @@ vkInitialize cfg win = do
     return $ Vulkan inst dbgMsg vDev queues surface swapchain images format extent imageViews
 
 -- |Terminates Vulkan
-vkCleanUp :: MonadIO m => InternalValues -> m ()
+vkCleanUp :: InternalValues -> IO ()
 vkCleanUp (Vulkan inst dbgMsg dev _ surface swapchain _ _ _ imageViews) = do
     V.forM_ imageViews (\view -> VK.destroyImageView dev view Nothing)
     VK.destroySwapchainKHR dev swapchain Nothing
@@ -337,3 +336,4 @@ vkCleanUp (Vulkan inst dbgMsg dev _ surface swapchain _ _ _ imageViews) = do
     when vkEnableValidationLayers $ VK.destroyDebugUtilsMessengerEXT inst (fromJust dbgMsg) Nothing
     VK.destroySurfaceKHR inst surface Nothing
     VK.destroyInstance inst Nothing
+vkCleanUp _ = error "Expected vulkan internal values"

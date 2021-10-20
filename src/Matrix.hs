@@ -32,6 +32,7 @@ translate (x:y:z:_) = [
     [0, 1, 0, y],
     [0, 0, 1, z],
     [0, 0, 0, 1]]
+translate _ = error "Translation called on non-3D vector"
 
 scale :: Float -> FeyMatrix
 scale s = [
@@ -112,6 +113,7 @@ dot a b = sum $ zipWith (*) a b
 -- |Subtract one vector from another
 sub :: Vec3 -> Vec3 -> Vec3
 sub (ax:ay:az:_) (bx:by:bz:_) = [ax - bx, ay - by, az - bz]
+sub _ _ = error "Subtraction called on non-3D vectors"
 
 -- |Find the cross product of two vectors
 cross :: Vec3 -> Vec3 -> Vec3
@@ -119,8 +121,10 @@ cross (ax:ay:az:_) (bx:by:bz:_) = [
     ay * bz - (az * by),
     az * bx - (ax * bz),
     ax * by - (ay * bx)]
+cross _ _ = error "Cross product called on non-3D vectors"
 
 -- |Make the length of an input vector one
 normalize :: Vec3 -> Vec3
 normalize (x:y:z:_) = [x/l, y/l, z/l] where
     l = sqrt $ sum $ map (^2) [x, y, z]
+normalize _ = error "Normalize called on non-3D vector"

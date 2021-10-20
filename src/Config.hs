@@ -13,6 +13,7 @@ import Control.Lens (makeLenses)
 import Text.Parsec
 import Text.Parsec.ByteString
 import Text.Parsec.Number
+import Text.ParserCombinators.Parsec.Error
 
 data GraphicsLib = OGL | VK deriving Eq
 
@@ -48,13 +49,14 @@ parseConfigFile = do
     title <- stringHelper
     dPath <- stringHelper
     lPath <- stringHelper
-    gLib <- stringHelper >>= \ case
-        "g" -> return OGL
-        _ -> return VK
+    gTag <- stringHelper 
 
+    let gLib = if gTag == "g" then OGL else VK
     return $ Config w h f n aa cursor full title dPath lPath gLib
 
-loadConfig :: FilePath -> IO Config
+loadConfig :: FilePath -> IO (Either String Config)
 loadConfig path = do
-    let fromEither (Right a) = a
-    fromEither <$> parseFromFile parseConfigFile path
+    eitherCfg <- parseFromFile parseConfigFile path
+    case eitherCfg of
+        (Left e) -> return $ Left $ messageString $ head $ errorMessages e
+        (Right cfg) -> return $ Right cfg
