@@ -57,7 +57,7 @@ loadResource mapLens key resName creator = do
             res <- liftIO creator
             case res of
                 (Left msg) -> do
-                    recordLog $ "Loading resource " ++ key ++ " failed with message " ++ msg
+                    recordLog $ "Loading resource " ++ key ++ " failed with message: " ++ msg
                     error "Loading resource failed" 
                 (Right r) -> do
                     setStateVar mapLens $ M.insert key (r, 1) resMap
@@ -65,8 +65,10 @@ loadResource mapLens key resName creator = do
 
 unloadResource :: 
     ALens' State (M.Map String (a, Int)) ->
-    String -> String ->
-    (a -> IO ()) -> FeyState ()
+    String -> 
+    String ->
+    (a -> IO ()) -> 
+    FeyState ()
 unloadResource mapLens key resName destructor = do
     resMap <- getStateVar mapLens
 

@@ -19,13 +19,11 @@ type FeyState a = StateT State IO a
 
 -- |Returns the value referred to by the Lens
 getStateVar :: ALens' State a -> FeyState a
-getStateVar getter = do
-    state <- get
-    return (state^#getter)
+getStateVar getter = (^# getter) <$> get
 
 -- |Set the state value referred to by the given Lens
 setStateVar :: ALens' State a -> a -> FeyState ()
-setStateVar setter val = modify $ \state -> storing setter val state
+setStateVar setter val = modify (& setter #~ val)
 
 -- |Runs the FeyState and pushes it into the IO monad
 runFeyState :: FeyState a -> State -> IO a

@@ -58,5 +58,5 @@ loadConfig :: FilePath -> IO (Either String Config)
 loadConfig path = do
     eitherCfg <- parseFromFile parseConfigFile path
     case eitherCfg of
-        (Left e) -> return $ Left $ messageString $ head $ errorMessages e
-        (Right cfg) -> return $ Right cfg
+        Left e -> return $ Left $ messageString $ head $ errorMessages e
+        Right cfg -> return $ Right cfg
