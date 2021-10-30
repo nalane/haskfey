@@ -11,7 +11,6 @@ module FeyState.ResourceHandler (
 import Resources
 
 import FeyState.FeyState
-import FeyState.State
 import FeyState.Logging
 
 import Control.Lens

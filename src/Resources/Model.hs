@@ -85,13 +85,12 @@ parser :: Parser (
     [String],
     V.Vector (Vertex2 GLfloat),
     [(Int, Int)])
-parser = do
-    m <- helper materialParser
-    v <- V.fromList <$> helper vertex3Parser
-    t <- helper textureParser
-    u <- V.fromList <$> helper uvParser
-    a <- helper mapParser
-    return (m, v, t, u, a)
+parser = (,,,,)
+    <$> helper materialParser
+    <*> (V.fromList <$> helper vertex3Parser)
+    <*> helper textureParser
+    <*> (V.fromList <$> helper uvParser)
+    <*> helper mapParser
 
 
 -- |Read the model at the given path into memory.

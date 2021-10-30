@@ -6,7 +6,6 @@ module FeyState.Logging (
 ) where
 
 import FeyState.FeyState
-import FeyState.State
 
 import System.IO
 
