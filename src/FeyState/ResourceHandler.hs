@@ -12,6 +12,7 @@ import Resources
 
 import FeyState.FeyState
 import FeyState.Logging
+import FeyState.GameState
 
 import Control.Lens
 
@@ -37,7 +38,7 @@ shaderKey :: [(ShaderType, FilePath)] -> String
 shaderKey = concatMap snd . sortBy (flip compare `on` fst)
 
 loadResource :: 
-    ALens' State (M.Map String (a, Int)) ->
+    ALens' GameState (M.Map String (a, Int)) ->
     String -> 
     String ->
     IO (Either String a) -> 
@@ -63,7 +64,7 @@ loadResource mapLens key resName creator = do
                     return $ Resource key r
 
 unloadResource :: 
-    ALens' State (M.Map String (a, Int)) ->
+    ALens' GameState (M.Map String (a, Int)) ->
     String -> 
     String ->
     (a -> IO ()) -> 
