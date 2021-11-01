@@ -1,4 +1,4 @@
-module Components.Resources.VertexList () where
+module Components.Resources.VertexList (VertexList) where
 
 import {-# SOURCE #-} FeyState.FeyState ()
 

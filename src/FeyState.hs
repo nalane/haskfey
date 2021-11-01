@@ -6,10 +6,12 @@ module FeyState (
     module FeyState.FeyState,
     module FeyState.Logging,
     module FeyState.ResourceHandler,
-    module FeyState.GameState
+    module FeyState.GameState,
+    module FeyState.ComponentDatabase
 ) where
 
 import FeyState.FeyState
 import FeyState.Logging
 import FeyState.ResourceHandler
 import FeyState.GameState
+import FeyState.ComponentDatabase
