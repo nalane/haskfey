@@ -11,7 +11,8 @@ module Lib (
     module Resources,
     module Object,
     module Fixtures,
-    module Config
+    module Config,
+    module Components
 ) where
 
 import FeyState
@@ -23,3 +24,4 @@ import Resources
 import Object
 import Fixtures
 import Config
+import Components
