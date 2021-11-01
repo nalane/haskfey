@@ -35,6 +35,7 @@ dependencies:
 - JuicyPixels
 - vulkan
 - mtl
+- data-default
 
 library:
   source-dirs: src

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cae0a2ac1a5f037999f69400414e9075dc279723449213617cb8f7d51fa6130b
+-- hash: 15164fe1e00f409faf2742d13bbbaf2e4376110fe664d94f8a209589d0fc3f2c
 
 name:           haskfey
 version:        0.1.0.0
@@ -29,7 +29,6 @@ library
   exposed-modules:
       Components
       Components.Resources
-      Components.Resources.VertexList
       Config
       Engine
       FeyState
@@ -67,6 +66,7 @@ library
     , base
     , bytestring
     , containers
+    , data-default
     , ekg
     , lens
     , monad-loops
@@ -97,6 +97,7 @@ executable haskfey-exe
     , base
     , bytestring
     , containers
+    , data-default
     , ekg
     , haskfey
     , lens
@@ -124,6 +125,7 @@ test-suite haskfey-test
     , base
     , bytestring
     , containers
+    , data-default
     , ekg
     , haskfey
     , lens

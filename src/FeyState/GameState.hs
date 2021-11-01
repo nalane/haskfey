@@ -7,11 +7,13 @@ module FeyState.GameState (
 
 import Config
 import Resources
+import FeyState.ComponentDatabase
 
 import Graphics.InternalValues
 import Graphics.GraphicsFunctions
 
 import Data.Map
+import Data.Default
 import System.IO
 import Control.Concurrent.MVar
 import Control.Lens
@@ -32,7 +34,9 @@ data GameState = GameState {
 
     -- Graphics engine internals
     _gfxIValues :: Maybe InternalValues,
-    _gfxFunctions :: Maybe GraphicsFunctions
+    _gfxFunctions :: Maybe GraphicsFunctions,
+
+    _componentDatabase :: ComponentDatabase
 }
 makeLenses ''GameState
 
@@ -57,5 +61,7 @@ newState path = do
         _textures = empty,
         
         _gfxIValues = Nothing,
-        _gfxFunctions = Nothing
+        _gfxFunctions = Nothing,
+
+        _componentDatabase = def
     }
