@@ -25,11 +25,6 @@ import Text.Parsec.ByteString
 import Text.Parsec.Number
 import Text.ParserCombinators.Parsec.Error
 
-data Material = Material (Vertex3 GLfloat) (Vertex3 GLfloat) Int
-
-defaultMaterial :: Material
-defaultMaterial = Material (Vertex3 0.8 0.8 0.8) (Vertex3 0.8 0.8 0.8) 1
-
 -- |Contains the data for drawing a model to the screen
 data Model = Model {
     _vao :: VertexArrayObject,
@@ -96,16 +91,14 @@ parser = (,,,,)
 -- |Read the model at the given path into memory.
 createModel :: FilePath -> IO (Either String Model)
 createModel path = do
-    let diffuse (Material d _ _) = d
-    
     eitherVal <- parseFromFile parser path
     case eitherVal of
         (Left e) -> return $ Left $ messageString $ head $ errorMessages e
         (Right (mats, verts, texts, uvs, mapping)) -> do 
-            let mat = if null mats then defaultMaterial else head mats
+            let mat = if null mats then def else head mats
             let v = map ((!) verts . fst) mapping
             let u = map ((!) uvs . snd) mapping
-            let m = replicate (length v) $ diffuse mat
+            let m = replicate (length v) $ mat^.diffuseMat
  
             vertexArray <- createVertexArray
             vertexBuffer <- createBuffer 0 3 v

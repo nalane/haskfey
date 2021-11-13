@@ -2,7 +2,8 @@
 
 module Components.Resources (
     feedData, readData,
-    VertexList, defaultVertexList
+    VertexResource, defaultVertexResource,
+    MaterialResource, defaultMaterialResource
 ) where
 
 import {-# SOURCE #-} FeyState.FeyState
@@ -11,21 +12,27 @@ import Matrix
 import Data.IORef
 import Control.Monad.IO.Class
 import Control.Lens
+import Data.Default
+import Graphics
 
 data ResourceComponent a = ResourceComponent {
-    _feedData :: [a] -> FeyState(),
-    _readData :: FeyState [a]
+    _feedData :: a -> FeyState(),
+    _readData :: FeyState a
 }
 makeLenses ''ResourceComponent
 
-defaultResourceComponent :: FeyState (ResourceComponent a)
+defaultResourceComponent :: Default a => FeyState (ResourceComponent a)
 defaultResourceComponent = do
-    container <- liftIO $ newIORef []
+    container <- liftIO $ newIORef def
     return $ ResourceComponent {
         _feedData = liftIO . writeIORef container,
         _readData = liftIO $ readIORef container
     }
 
-type VertexList = ResourceComponent Vec3
-defaultVertexList :: FeyState VertexList
-defaultVertexList = defaultResourceComponent
+type VertexResource = ResourceComponent [Vec3]
+defaultVertexResource :: FeyState VertexResource
+defaultVertexResource = defaultResourceComponent
+
+type MaterialResource = ResourceComponent Material
+defaultMaterialResource :: FeyState MaterialResource
+defaultMaterialResource = defaultResourceComponent

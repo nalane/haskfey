@@ -1,22 +1,23 @@
 {-# LANGUAGE TemplateHaskell #-}
 module FeyState.ComponentDatabase (
     ComponentDatabase, resourceComponents,
-    vertexLists
+    vertexResources
 ) where
 
 import Components
 
 import Data.Map as M
-import Control.Lens ( makeLenses )
+import Control.Lens
 import Data.Default
 
-newtype ResourceComponents = ResourceComponents {
-    _vertexLists :: M.Map Int VertexList
+data ResourceComponents = ResourceComponents {
+    _vertexResources :: M.Map Int VertexResource,
+    _materialResources :: M.Map Int MaterialResource
 }
 makeLenses ''ResourceComponents
 
 instance Default ResourceComponents where
-    def = ResourceComponents def
+    def = ResourceComponents def def
 
 
 
