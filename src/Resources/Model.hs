@@ -11,9 +11,6 @@ module Resources.Model (
 import Graphics.Rendering.OpenGL
 import Graphics
 
-import System.IO
-
-import Data.Either
 import Data.Vector ((!))
 import qualified Data.Vector as V
 
@@ -51,23 +48,23 @@ vertex3Parser = do
     return $ Vertex3 x y z
 
 materialParser :: Parser Material
-materialParser = Material <$> vertex3Parser <*> vertex3Parser <* spaces <*> nat
+materialParser = Material 
+    <$> vertex3Parser
+    <*> vertex3Parser 
+    <*  spaces 
+    <*> nat
 
 textureParser :: Parser String
 textureParser = many $ noneOf "\r\n"
 
 uvParser :: Parser (Vertex2 GLfloat)
-uvParser = do
-    index <- nat
-    spaces
-    vertex2Parser
+uvParser = nat *> space *> vertex2Parser
 
 mapParser :: Parser (Int, Int)
-mapParser = do
-    vertIndex <- nat
-    spaces
-    uvIndex <- nat
-    return (vertIndex, uvIndex)
+mapParser = (,)
+    <$> nat
+    <*  spaces
+    <*> nat
 
 helper :: Parser a -> Parser [a]
 helper p = do
@@ -93,8 +90,8 @@ createModel :: FilePath -> IO (Either String Model)
 createModel path = do
     eitherVal <- parseFromFile parser path
     case eitherVal of
-        (Left e) -> return $ Left $ messageString $ head $ errorMessages e
-        (Right (mats, verts, texts, uvs, mapping)) -> do 
+        Left e -> return $ Left $ unlines $ map messageString $ errorMessages e
+        Right (mats, verts, texts, uvs, mapping) -> do 
             let mat = if null mats then def else head mats
             let v = map ((!) verts . fst) mapping
             let u = map ((!) uvs . snd) mapping

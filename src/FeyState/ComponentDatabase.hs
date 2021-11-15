@@ -12,12 +12,13 @@ import Data.Default
 
 data ResourceComponents = ResourceComponents {
     _vertexResources :: M.Map Int VertexResource,
-    _materialResources :: M.Map Int MaterialResource
+    _materialResources :: M.Map Int MaterialResource,
+    _textureResource :: M.Map Int TextureResource
 }
 makeLenses ''ResourceComponents
 
 instance Default ResourceComponents where
-    def = ResourceComponents def def
+    def = ResourceComponents def def def
 
 
 

@@ -9,6 +9,7 @@ module FeyState.ResourceHandler (
 ) where
 
 import Resources
+import Graphics
 
 import FeyState.FeyState
 import FeyState.Logging

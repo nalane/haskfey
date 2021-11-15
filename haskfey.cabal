@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f67438e8c949291e5ce599efa2ff916daa1a3047a3680247bb6ecb0cc46e839a
+-- hash: b136c31b13b2360702bc09c2a15673bcedfb25ec90e4e362316e6d9ad36a3f84
 
 name:           haskfey
 version:        0.1.0.0
@@ -45,13 +45,13 @@ library
       Graphics.GraphicsFunctions
       Graphics.InternalValues
       Graphics.Material
+      Graphics.Texture
       Lib
       Matrix
       Object
       Resources
       Resources.Model
       Resources.Shaders
-      Resources.Texture
       Scene
   other-modules:
       Paths_haskfey

@@ -1,4 +1,4 @@
-module Resources.Texture (
+module Graphics.Texture (
     Texture, createTexture, drawTexture, destroyTexture
 ) where
 
@@ -6,18 +6,23 @@ import Graphics.Rendering.OpenGL (($=))
 import qualified Graphics.Rendering.OpenGL as GL
 import Codec.Picture
 
+import Data.Default
 import Data.Either
 import Data.Vector.Storable
+import Data.Word
 
 newtype Texture = Texture GL.TextureObject
+
+instance Default Texture where
+    def = Texture $ GL.TextureObject maxBound
 
 createTexture :: FilePath -> IO (Either String Texture)
 createTexture path = do
     rawImg <- readImage path
     case rawImg of
-        (Left e) -> return $ Left e
-        (Right i) -> do
-            let img = convertRGBA8 i
+        Left err -> return $ Left err
+        Right rawImg -> do
+            let img = convertRGBA8 rawImg
 
             --GL.activeTexture $= GL.TextureUnit 0
             texObj <- GL.genObjectName

@@ -11,6 +11,7 @@ import FeyState.ComponentDatabase
 
 import Graphics.InternalValues
 import Graphics.GraphicsFunctions
+import Graphics.Texture
 
 import Data.Map
 import Data.Default

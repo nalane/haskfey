@@ -3,7 +3,8 @@
 module Components.Resources (
     feedData, readData,
     VertexResource, defaultVertexResource,
-    MaterialResource, defaultMaterialResource
+    MaterialResource, defaultMaterialResource,
+    TextureResource, defaultTextureResource
 ) where
 
 import {-# SOURCE #-} FeyState.FeyState
@@ -36,3 +37,7 @@ defaultVertexResource = defaultResourceComponent
 type MaterialResource = ResourceComponent Material
 defaultMaterialResource :: FeyState MaterialResource
 defaultMaterialResource = defaultResourceComponent
+
+type TextureResource = ResourceComponent Texture
+defaultTextureResource :: FeyState TextureResource
+defaultTextureResource = defaultResourceComponent
