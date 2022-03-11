@@ -46,8 +46,8 @@ newState :: String -> IO GameState
 newState path = do
     rawCfg <- loadConfig path
     let cfg = case rawCfg of
-            (Left e) -> error e
-            (Right v) -> v
+            Left e -> error e
+            Right v -> v
     
     fh <- openFile "log.txt" WriteMode
     k <- newMVar empty

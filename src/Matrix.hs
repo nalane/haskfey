@@ -48,7 +48,7 @@ rotate theta axis = [
     [xy * invcost + (z * sint), yy * invcost + cost, yz * invcost - (x * sint), 0],
     [xz * invcost - (y * sint), yz * invcost + (x * sint), zz * invcost + cost, 0],
     [0, 0, 0, 1]] where
-        (x:y:z:_) = normalize axis
+        x:y:z:_ = normalize axis
         xx = x * x
         xy = x * y
         xz = x * z
@@ -69,13 +69,13 @@ camera pos lookAt upVector = [
     [lx, ly, lz, -(dot left pos)],
     [ux, uy, uz, -(dot normUp pos)],
     [fx, fy, fz, -(dot forward pos)],
-    [0, 0, 0, 1]] where
+    [0,  0,  0,  1]] where
         forward = normalize $ sub pos lookAt
         left = normalize $ cross upVector forward
         normUp = normalize $ cross forward left
-        (fx:fy:fz:_) = forward
-        (lx:ly:lz:_) = left
-        (ux:uy:uz:_) = normUp
+        fx:fy:fz:_ = forward
+        lx:ly:lz:_ = left
+        ux:uy:uz:_ = normUp
 
 -- |Creates an orthographic projection matrix
 orthographic :: Int -> Int -> Float -> Float -> FeyMatrix
@@ -95,14 +95,14 @@ orthographic width height near far = [
 
 -- |Multiplies two 4x4 matrices
 multiply :: FeyMatrix -> FeyMatrix -> FeyMatrix
-multiply a b =
-    map (\k -> 
-        map (\j -> 
-            sum $ map (\i ->
-                a !! k !! i * (b !! i !! j)
-            ) [0, 1, 2, 3]
-        ) [0, 1, 2, 3]
-    ) [0, 1, 2, 3]
+multiply a b = do
+    aRow <- a
+    return $ do
+        j <- [0..3]
+        return $ sum $ do 
+            (aVal, bRow) <- zip aRow b
+            let bVal = bRow !! j
+            return $ aVal * bVal
 
 -- Vector utils
 
