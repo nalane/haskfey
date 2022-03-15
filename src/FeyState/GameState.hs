@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module FeyState.GameState (
-    GameState, logFile, shaders, models, textures, keyState, config, window, gfxFunctions, gfxIValues,
+    GameState, logFile, shaders, models, textures, keyState, config, window, gfxIValues,
     newState
 ) where
 
@@ -11,7 +11,6 @@ import FeyState.ComponentDatabase
 
 import Graphics.InternalValues
 import Graphics.GraphicsFunctions
-import Graphics.Texture
 
 import Data.Map
 import Data.Default
@@ -35,7 +34,6 @@ data GameState = GameState {
 
     -- Graphics engine internals
     _gfxIValues :: Maybe InternalValues,
-    _gfxFunctions :: Maybe GraphicsFunctions,
 
     _componentDatabase :: ComponentDatabase
 }
@@ -62,7 +60,6 @@ newState path = do
         _textures = empty,
         
         _gfxIValues = Nothing,
-        _gfxFunctions = Nothing,
 
         _componentDatabase = def
     }

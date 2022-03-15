@@ -1,4 +1,4 @@
-module Graphics.Texture (
+module Resources.Texture (
     Texture, createTexture, drawTexture, destroyTexture
 ) where
 

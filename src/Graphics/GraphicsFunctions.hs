@@ -1,12 +1,10 @@
 {-| This structure contains the functions for interfacing with the graphics engine.
 -}
 
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module Graphics.GraphicsFunctions (
-    GraphicsFunctions, initialize, cleanUp,
-    getFunctions
+    initGraphics, endGraphics
 ) where
 
 import qualified Graphics.UI.GLFW as GLFW
@@ -43,42 +41,7 @@ import Config
 import Graphics.InternalValues
 
 foreign import ccall unsafe "debugCallback.c &debugCallback"
-  debugCallbackPtr :: VK.PFN_vkDebugUtilsMessengerCallbackEXT
-
-data GraphicsFunctions = GraphicsFunctions {
-    _initialize :: IO InternalValues,
-    _cleanUp :: InternalValues -> IO ()
-}
-
-makeLenses ''GraphicsFunctions
-
-getFunctions :: Config -> GLFW.Window -> GraphicsFunctions
-getFunctions cfg win =
-    let lib = cfg^.graphicsLib
-    in case lib of
-        OGL -> 
-            GraphicsFunctions {
-                _initialize = glInitialize,
-                _cleanUp = \_ -> return ()
-            }
-        VK -> 
-            GraphicsFunctions {
-                _initialize = vkInitialize cfg win,
-                _cleanUp = vkCleanUp
-            }
-
---------------------------OpenGL--------------------------
-
--- |Sets up OpenGL variables that determine how it renders
-glInitialize :: IO InternalValues
-glInitialize = do
-    GL.clearColor $= GL.Color4 0 0 0 1
-    GL.depthFunc $= Just GL.Less
-    GL.cullFace $= Just GL.Back
-    GL.frontFace $= GL.CCW
-    return OpenGL
-
---------------------------Vulkan--------------------------
+    debugCallbackPtr :: VK.PFN_vkDebugUtilsMessengerCallbackEXT
 
 vkEnableValidationLayers :: Bool
 vkEnableValidationLayers = True
@@ -313,9 +276,16 @@ vkCreateImageViews images format dev = V.mapM (\image -> do
     }
     VK.createImageView dev createInfo Nothing) images
 
--- |Sets up Vulkan
-vkInitialize :: Config -> GLFW.Window -> IO InternalValues
-vkInitialize cfg win = do
+----------------- PUBLIC FUNCTIONS -----------------
+
+initGraphics :: GraphicsLib -> Config -> GLFW.Window -> IO InternalValues 
+initGraphics OGL _ _ = do
+    GL.clearColor $= GL.Color4 0 0 0 1
+    GL.depthFunc $= Just GL.Less
+    GL.cullFace $= Just GL.Back
+    GL.frontFace $= GL.CCW
+    return OpenGL
+initGraphics VK cfg win = do
     inst <- vkCreateInstance cfg
     dbgMsg <-
         if vkEnableValidationLayers then Just <$> vkSetupDebugMessenger inst
@@ -327,13 +297,12 @@ vkInitialize cfg win = do
     imageViews <- vkCreateImageViews images format vDev
     return $ Vulkan inst dbgMsg vDev queues surface swapchain images format extent imageViews
 
--- |Terminates Vulkan
-vkCleanUp :: InternalValues -> IO ()
-vkCleanUp (Vulkan inst dbgMsg dev _ surface swapchain _ _ _ imageViews) = do
+endGraphics :: InternalValues -> IO ()
+endGraphics OpenGL = return ()
+endGraphics (Vulkan inst dbgMsg dev _ surface swapchain _ _ _ imageViews) = do
     V.forM_ imageViews (\view -> VK.destroyImageView dev view Nothing)
     VK.destroySwapchainKHR dev swapchain Nothing
     VK.destroyDevice dev Nothing
     when vkEnableValidationLayers $ VK.destroyDebugUtilsMessengerEXT inst (fromJust dbgMsg) Nothing
     VK.destroySurfaceKHR inst surface Nothing
     VK.destroyInstance inst Nothing
-vkCleanUp _ = error "Expected vulkan internal values"

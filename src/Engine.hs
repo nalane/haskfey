@@ -26,9 +26,10 @@ import Data.Maybe
 import Data.IORef
 import Data.StateVar
 import qualified Data.Map as M
+import Graphics.GraphicsFunctions (initGraphics, endGraphics)
 
 initGLFW :: Config -> MVar (M.Map GLFW.Key Bool) -> IO GLFW.Window
-initGLFW cfg keyMap = do 
+initGLFW cfg keyMap = do
     let samples = cfg^.aaSamples
     let title = cfg^.windowTitle
     let graphics = cfg^.graphicsLib
@@ -59,7 +60,7 @@ initGLFW cfg keyMap = do
     when (graphics == OGL) $ do
         GLFW.makeContextCurrent $ Just win
         GLFW.swapInterval 1
-        
+
     GLFW.setKeyCallback win $ Just (\_ k _ s _ ->
         modifyMVar_ keyMap $ return . M.insert k (s == GLFW.KeyState'Pressed))
     when (cfg^.hideCursor) $ GLFW.setCursorInputMode win GLFW.CursorInputMode'Disabled
@@ -70,7 +71,7 @@ initGLFW cfg keyMap = do
 isKeyPressed :: GLFW.Key -> FeyState Bool
 isKeyPressed k = do
     keyMap <- getStateVar keyState >>= (liftIO . readMVar)
-    
+
     let res = M.lookup k keyMap
     case res of
         Just True -> return True
@@ -85,9 +86,7 @@ initGame = do
     win <- liftIO $ initGLFW cfg k
     setStateVar window $ Just win
 
-    let funcs = getFunctions cfg win
-    setStateVar gfxFunctions $ Just funcs
-    iVals <- liftIO (funcs^.initialize)
+    iVals <- liftIO $ initGraphics (cfg^.graphicsLib) cfg win
     setStateVar gfxIValues $ Just iVals
 
 -- |The main game loop
@@ -108,7 +107,7 @@ runGame sceneMap sceneId = do
             Nothing -> do
                 liftIO $ GL.clear [GL.ColorBuffer, GL.DepthBuffer]
                 scene^.drawScene
-    
+
                 when (gLib == OGL) $ liftIO $ GLFW.swapBuffers win
             Just newId -> do
                 ks <- getStateVar keyState
@@ -126,9 +125,8 @@ runGame sceneMap sceneId = do
 -- |Cleans up once the game is finished
 endGame :: FeyState ()
 endGame = do
-    functions <- fromJust <$> getStateVar gfxFunctions
     iVals <- fromJust <$> getStateVar gfxIValues
-    liftIO $ (functions^.cleanUp) iVals
+    liftIO $ endGraphics iVals
 
     win <- getStateVar window
     liftIO $ forM_ win GLFW.destroyWindow

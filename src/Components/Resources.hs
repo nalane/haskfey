@@ -15,6 +15,7 @@ import Data.IORef
 import Control.Monad.IO.Class
 import Control.Lens
 import Data.Default
+import Resources
 import Graphics
 import Graphics.Rendering.OpenGL
 
