@@ -4,7 +4,8 @@ module Components.Resources (
     feedData, readData,
     VertexResource, defaultVertexResource,
     MaterialResource, defaultMaterialResource,
-    TextureResource, defaultTextureResource
+    TextureResource, defaultTextureResource,
+    UVResource, defaultUVResource
 ) where
 
 import {-# SOURCE #-} FeyState.FeyState
@@ -15,6 +16,7 @@ import Control.Monad.IO.Class
 import Control.Lens
 import Data.Default
 import Graphics
+import Graphics.Rendering.OpenGL
 
 data ResourceComponent a = ResourceComponent {
     _feedData :: a -> FeyState(),
@@ -30,9 +32,13 @@ defaultResourceComponent = do
         _readData = liftIO $ readIORef container
     }
 
-type VertexResource = ResourceComponent [Vec3]
+type VertexResource = ResourceComponent [Vertex3 GLfloat]
 defaultVertexResource :: FeyState VertexResource
 defaultVertexResource = defaultResourceComponent
+
+type UVResource = ResourceComponent [Vertex2 GLfloat]
+defaultUVResource :: FeyState UVResource
+defaultUVResource = defaultResourceComponent
 
 type MaterialResource = ResourceComponent Material
 defaultMaterialResource :: FeyState MaterialResource

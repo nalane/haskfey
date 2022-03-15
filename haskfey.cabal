@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b136c31b13b2360702bc09c2a15673bcedfb25ec90e4e362316e6d9ad36a3f84
+-- hash: 94d51b880b9ee3a110df4a086fdba39a2278d6639c6779f833fbd87267c4641c
 
 name:           haskfey
 version:        0.1.0.0
@@ -27,6 +27,8 @@ source-repository head
 
 library
   exposed-modules:
+      Assets
+      Assets.Model
       Components
       Components.Resources
       Config
